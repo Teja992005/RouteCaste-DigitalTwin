@@ -132,3 +132,41 @@ $RECYCLE.BIN/
 # --------------------
 *.tsbuildinfo
 next-env.d.ts
+# --------------------
+# RouteCast generated simulation artifacts
+# --------------------
+
+# Large SUMO simulation outputs
+data/simulation/
+
+# Raw SUMO network files
+data/raw/sumo_network/*.net.xml
+data/raw/sumo_network/*.osm.xml
+
+# Intermediate traffic database
+data/processed/*.db
+
+# Local cache
+cache/
+
+# Temporary/recovery scripts
+audit_edge.py
+recover_remaining_baselines.py
+rerun_bad_baselines.py
+scripts/07_run_simulations_backup.py
+
+# --------------------
+# RouteCast raw and generated scenario data
+# --------------------
+
+# Raw network/input data
+data/raw/
+
+# Generated SUMO routes and scenario configs
+data/scenarios/
+
+# Intermediate traffic-state exports
+data/processed/traffic_state*.csv
+
+# Intermediate databases
+data/processed/*.db
