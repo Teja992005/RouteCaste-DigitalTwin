@@ -405,17 +405,58 @@ export function CityMap({
         )
       })}
 
-      {/* Venue (hidden in directions mode; the B marker stands in for it) */}
+      {/* Venue with Concentric Spatial Influence Rings (Dataset 2 Spatial Model) */}
       {!directions && (
-        <CircleMarker
-          center={[venue.lat, venue.lng]}
-          radius={10}
-          pathOptions={{ color: "#22d3ee", fillColor: "#22d3ee", fillOpacity: 0.9, weight: 3 }}
-        >
-          <Tooltip direction="top" permanent>
-            {data.event.name}
-          </Tooltip>
-        </CircleMarker>
+        <>
+          <Circle
+            center={[venue.lat, venue.lng]}
+            radius={1000}
+            pathOptions={{
+              color: "#22d3ee",
+              fillColor: "#22d3ee",
+              fillOpacity: 0.04,
+              weight: 1,
+              dashArray: "8 8",
+            }}
+          >
+            <Tooltip sticky>🔵 1,000m Peripheral Zone — Crowd Influx Boundary</Tooltip>
+          </Circle>
+          <Circle
+            center={[venue.lat, venue.lng]}
+            radius={500}
+            pathOptions={{
+              color: "#facc15",
+              fillColor: "#facc15",
+              fillOpacity: 0.09,
+              weight: 1.5,
+              dashArray: "6 6",
+            }}
+          >
+            <Tooltip sticky>🟡 500m Buffer Zone — Moderate Congestion Risk</Tooltip>
+          </Circle>
+          <Circle
+            center={[venue.lat, venue.lng]}
+            radius={250}
+            pathOptions={{
+              color: "#f43f5e",
+              fillColor: "#f43f5e",
+              fillOpacity: 0.18,
+              weight: 2,
+              dashArray: "4 4",
+            }}
+          >
+            <Tooltip sticky>🔴 250m Event Epicenter — Severe Delay & Congestion Zone</Tooltip>
+          </Circle>
+          <CircleMarker
+            center={[venue.lat, venue.lng]}
+            radius={10}
+            pathOptions={{ color: "#22d3ee", fillColor: "#22d3ee", fillOpacity: 0.9, weight: 3 }}
+          >
+            <Tooltip direction="top" permanent>
+              {data.event.name}
+            </Tooltip>
+          </CircleMarker>
+        </>
       )}
 
       {/* Point-to-point trip markers */}

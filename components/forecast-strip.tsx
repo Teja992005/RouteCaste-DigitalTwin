@@ -10,6 +10,9 @@ function barColor(c: number): string {
   return "#f43f5e"
 }
 
+// Dataset 2 prediction horizons in minutes
+const HORIZON_MINUTES = [5, 10, 15, 30, 45, 60]
+
 export function ForecastStrip({ forecast, source = "heuristic" }: Props) {
   const isModel = source === "model"
   const max = Math.max(0.6, ...forecast.map((f) => f.congestion))
@@ -22,45 +25,55 @@ export function ForecastStrip({ forecast, source = "heuristic" }: Props) {
         <span className="flex items-center gap-2">
           <h2 className="font-mono text-xs uppercase tracking-widest text-primary">Traffic forecast</h2>
           <span
-            className="rounded-full border px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider"
+            className="flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[8px] uppercase tracking-wider"
             style={{
-              borderColor: isModel ? "#22d3ee" : "var(--color-border)",
-              color: isModel ? "#22d3ee" : "var(--color-muted-foreground)",
+              borderColor: isModel ? "#10b981" : "var(--color-border)",
+              backgroundColor: isModel ? "rgba(16, 185, 129, 0.12)" : "transparent",
+              color: isModel ? "#10b981" : "var(--color-muted-foreground)",
             }}
           >
-            {isModel ? "AI model" : "Heuristic"}
+            {isModel && <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+            {isModel ? "ONNX Active" : "Heuristic"}
           </span>
         </span>
         <span
           className="font-mono text-[10px] uppercase tracking-wider"
           style={{ color: trend > 0.02 ? "#f43f5e" : trend < -0.02 ? "#22d3ee" : "var(--color-muted-foreground)" }}
         >
-          {trend > 0.02 ? "Rising" : trend < -0.02 ? "Easing" : "Stable"}
+          {trend > 0.02 ? "Surging" : trend < -0.02 ? "Clearing" : "Stable"}
         </span>
       </div>
 
-      <div className="flex items-end gap-1.5" style={{ height: 72 }}>
-        {forecast.map((f) => (
-          <div key={f.step} className="flex h-full flex-1 flex-col items-center gap-1">
-            <div className="relative w-full flex-1">
-              <div
-                className="absolute bottom-0 w-full rounded-sm transition-all"
-                style={{
-                  height: `${Math.max(4, (f.congestion / max) * 100)}%`,
-                  backgroundColor: barColor(f.congestion),
-                  opacity: 0.85,
-                }}
-              />
+      <div className="flex items-end gap-1.5" style={{ height: 76 }}>
+        {forecast.map((f, idx) => {
+          const horizonLabel = HORIZON_MINUTES[idx] ?? HORIZON_MINUTES[f.step - 1] ?? (f.step * 10)
+          const pct = Math.round(f.congestion * 100)
+          return (
+            <div key={f.step} className="group relative flex h-full flex-1 flex-col items-center gap-1">
+              <span className="font-mono text-[8px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                {pct}%
+              </span>
+              <div className="relative w-full flex-1">
+                <div
+                  className="absolute bottom-0 w-full rounded-sm transition-all shadow-sm"
+                  style={{
+                    height: `${Math.max(6, (f.congestion / max) * 100)}%`,
+                    backgroundColor: barColor(f.congestion),
+                    opacity: 0.9,
+                  }}
+                  title={`Horizon: +${horizonLabel}m | Congestion: ${pct}%`}
+                />
+              </div>
+              <span className="font-mono text-[9px] text-muted-foreground">+{horizonLabel}m</span>
             </div>
-            <span className="font-mono text-[9px] text-muted-foreground">+{f.step}m</span>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <p className="text-[10px] text-muted-foreground text-pretty">
         {isModel
-          ? `Trained ONNX model projection of city congestion over the next ${forecast.length} minutes.`
-          : `Heuristic projection of city congestion over the next ${forecast.length} minutes. Train a model in /ml to activate the AI forecast.`}
+          ? `Multi-horizon AI forecast trained on Dataset 2 (SUMO Guntur digital twin) predicting traffic states up to 60 minutes ahead.`
+          : `Heuristic projection of city congestion. Trained models in /models will automatically upgrade this to AI multi-horizon forecasting.`}
       </p>
     </section>
   )

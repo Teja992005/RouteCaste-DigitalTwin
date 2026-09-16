@@ -170,3 +170,9 @@ data/processed/traffic_state*.csv
 
 # Intermediate databases
 data/processed/*.db
+
+# Extracted large ML datasets
+data/processed/baseline_prediction_targets_reduced.csv/
+data/processed/event_prediction_targets_reduced.csv/
+data/processed/event_traffic_1km.csv/
+data/processed/routecast_ml_dataset.csv/
