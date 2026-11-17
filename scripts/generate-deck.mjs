@@ -24,7 +24,7 @@ pptx.defineLayout({ name: "WIDE", width: 13.333, height: 7.5 })
 pptx.layout = "WIDE"
 pptx.author = "RouteCast"
 pptx.company = "Capstone Project"
-pptx.title = "RouteCast — Event Route Digital Twin & AI Traffic Simulator"
+pptx.title = "RouteCast — AI Digital Twin of Guntur for Event Traffic"
 
 const W = 13.333
 const H = 7.5
@@ -134,51 +134,15 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   s.background = { color: BG }
   s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: W, h: 0.08, fill: { color: CYAN } })
   s.addShape(pptx.ShapeType.rect, { x: 0, y: H - 0.08, w: W, h: 0.08, fill: { color: CYAN } })
-
-  s.addText("ROUTECAST", {
-    x: 0.6,
-    y: 2.35,
-    w: 12,
-    h: 1.2,
-    fontFace: FONT,
-    fontSize: 60,
-    color: TEXT,
-    bold: true,
-    charSpacing: 2,
+  s.addText("ROUTECAST", { x: 0.6, y: 2.35, w: 12, h: 1.2, fontFace: FONT, fontSize: 60, color: TEXT, bold: true, charSpacing: 2 })
+  s.addText("AI Digital Twin of Guntur City for Event Traffic", { x: 0.65, y: 3.55, w: 12, h: 0.6, fontFace: FONT, fontSize: 22, color: CYAN })
+  s.addText("Schedule an event on the map and predict how it slows the roads around it.", {
+    x: 0.65, y: 4.2, w: 12, h: 0.5, fontFace: FONT, fontSize: 15, color: MUTED,
   })
-  s.addText("Event Route Digital Twin & AI Traffic Simulator", {
-    x: 0.65,
-    y: 3.55,
-    w: 12,
-    h: 0.6,
-    fontFace: FONT,
-    fontSize: 22,
-    color: CYAN,
+  s.addText("Next.js  •  React  •  TypeScript  •  Leaflet  •  PyTorch  →  ONNX  •  OpenStreetMap", {
+    x: 0.65, y: 5.5, w: 12, h: 0.4, fontFace: MONO, fontSize: 13, color: MUTED,
   })
-  s.addText("Plan, simulate, and re-route event traffic anywhere in the world.", {
-    x: 0.65,
-    y: 4.2,
-    w: 12,
-    h: 0.5,
-    fontFace: FONT,
-    fontSize: 15,
-    color: MUTED,
-  })
-  s.addText(
-    [
-      { text: "Next.js  •  React  •  TypeScript  •  Leaflet  •  Three.js  •  PyTorch  →  ONNX", options: {} },
-    ],
-    { x: 0.65, y: 5.5, w: 12, h: 0.4, fontFace: MONO, fontSize: 13, color: MUTED },
-  )
-  s.addText("Capstone Project  |  Name • College • Guide", {
-    x: 0.65,
-    y: 6.4,
-    w: 12,
-    h: 0.4,
-    fontFace: MONO,
-    fontSize: 12,
-    color: MUTED,
-  })
+  s.addText("Capstone Project  |  Name • College • Guide", { x: 0.65, y: 6.4, w: 12, h: 0.4, fontFace: MONO, fontSize: 12, color: MUTED })
 }
 
 // ---- Slide 2: Overview ----------------------------------------------------
@@ -187,17 +151,13 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   base(s)
   kicker(s, "Introduction", "02 / 15")
   title(s, "What is RouteCast?")
-  bullets(
-    s,
-    [
-      "A web-based digital-twin platform that computes optimal travel routes for event attendees over a real-coordinate city road network.",
-      "Two modes: Event (route many invitees to one venue) and Directions (Google-Maps-style point A → point B).",
-      "Works for any location worldwide via free OpenStreetMap geocoding.",
-      "Simulates disruptions (accident, closure, weather, surge) and uses trained deep-learning models to re-rank routes by predicted travel time.",
-      "Three views: real Map, 2D hologram, and 3D hologram, plus a live metrics dashboard.",
-    ],
-    { y: 2.0 },
-  )
+  bullets(s, [
+    "Navigation apps optimize one trip and react to traffic after it forms. RouteCast looks ahead: it simulates the traffic an event will create before it happens.",
+    "Place an event on a map of Guntur, set its type, time window and attendance, and get predicted delays for the routes people would take.",
+    "Two trained neural networks (ONNX) predict travel time and congestion level. If a model cannot run, the app falls back to a heuristic and says so on screen.",
+    "Up to three events can be simulated together to see how overlapping events add up.",
+    "Two modes: Event (simulate impact) and Directions (point-to-point routes scored with weather, incidents and closures).",
+  ], { y: 2.0 })
 }
 
 // ---- Slide 3: Problem -----------------------------------------------------
@@ -206,21 +166,21 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   base(s)
   kicker(s, "Problem Statement", "03 / 15")
   title(s, "The Gap in Existing Tools")
-  card(s, 0.7, 2.1, 5.9, 2.1, "TODAY'S NAVIGATION APPS", [
-    "Optimize a single traveler in isolation",
-    "No collective / organizer-level view",
-    "ETA is a black box — not tunable",
-    "No what-if disruption simulation",
+  card(s, 0.7, 2.1, 5.9, 2.3, "TODAY'S TOOLS", [
+    "Show traffic that already exists",
+    "Cannot answer \"what happens on the evening of the event?\"",
+    "Do not treat a venue as a source of demand",
+    "No quick way to test a time slot or closure",
   ], MUTED)
-  card(s, 6.75, 2.1, 5.9, 2.1, "WHAT'S MISSING", [
-    "Plan routes for a whole group to one venue",
-    "Weight time vs distance vs congestion",
-    "Model accidents / closures before they hurt",
-    "Aggregate impact: emissions, response time",
+  card(s, 6.75, 2.1, 5.9, 2.3, "WHAT'S NEEDED", [
+    "Predict an event's effect on nearby roads",
+    "Compare each route with and without the event",
+    "Test attendance, timing and road closures in advance",
+    "Show where every number came from",
   ], CYAN)
   s.addText(
-    "Core question: How can an organizer plan, tune, and simulate routing for many people converging on one venue?",
-    { x: 0.7, y: 4.6, w: 11.9, h: 0.9, fontFace: FONT, fontSize: 16, color: TEXT, italic: true },
+    "Core question: If this event happens here, at this time, with this many people — which roads slow down, by how much, and what should travelers and responders do?",
+    { x: 0.7, y: 4.8, w: 11.9, h: 0.9, fontFace: FONT, fontSize: 16, color: TEXT, italic: true },
   )
 }
 
@@ -231,19 +191,15 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   kicker(s, "Objectives", "04 / 15")
   title(s, "Project Objectives")
   const objs = [
-    ["01", "Model a real-coordinate city road network as a routable weighted graph."],
-    ["02", "Compute best / fastest / shortest routes with user-adjustable weights."],
-    ["03", "Support any worldwide location; auto-generate invitees per city."],
-    ["04", "Simulate disruptions and quantify impact vs a baseline."],
-    ["05", "Train & integrate deep-learning models (ETA + congestion) via ONNX."],
-    ["06", "Visualize on Map + 2D/3D holograms with a live metrics dashboard."],
+    ["01", "Simulate an event's attendance, type and time window against normal traffic at the same hour."],
+    ["02", "Predict per-route travel time and congestion class with trained ONNX models."],
+    ["03", "Rank routes by predicted event-time ETA and recommend the least affected one."],
+    ["04", "Visualize impact zones, per-road congestion and reachable area on a real map."],
+    ["05", "Check emergency access and road-closure impact near the venue."],
+    ["06", "Label every result: model or heuristic, measured or estimated."],
   ]
   objs.forEach((o, i) => {
-    const col = i % 2
-    const row = Math.floor(i / 2)
-    const x = 0.7 + col * 6.05
-    const y = 2.1 + row * 1.5
-    card(s, x, y, 5.9, 1.3, o[0], [o[1]], CYAN)
+    card(s, 0.7 + (i % 2) * 6.05, 2.1 + Math.floor(i / 2) * 1.5, 5.9, 1.3, o[0], [o[1]], CYAN)
   })
 }
 
@@ -254,32 +210,19 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   kicker(s, "Proposed Solution", "05 / 15")
   title(s, "How RouteCast Works")
   const steps = [
-    ["Graph", "8×8 intersection grid over real lat/lng; each edge has congestion + free-flow speed."],
-    ["Optimize", "Dijkstra computes routes under a normalized weighted blend of time, distance, congestion."],
-    ["Simulate", "Scenarios mutate the graph; metrics recomputed vs a no-disruption baseline."],
-    ["Predict", "ONNX ETA model re-ranks routes by predicted time; congestion model forecasts ahead."],
+    ["Place", "Pick a route on the Guntur map, then place an event: type, time window, attendance."],
+    ["Build inputs", "One module rebuilds the exact feature formulas used in training: baseline and with-event."],
+    ["Predict", "The same ONNX models predict ETA and congestion class for both scenarios. Delay = difference."],
+    ["Advise", "Rank routes, show the heatmap and impact zone, re-run at any hour with the time slider."],
   ]
   steps.forEach((st, i) => {
     const x = 0.7 + i * 3.05
     card(s, x, 2.3, 2.85, 3.0, st[0].toUpperCase(), [st[1]], CYAN)
-    if (i < 3) {
-      s.addText("→", {
-        x: x + 2.82,
-        y: 3.5,
-        w: 0.35,
-        h: 0.6,
-        align: "center",
-        fontFace: FONT,
-        fontSize: 24,
-        color: CYAN,
-        bold: true,
-      })
-    }
+    if (i < 3) s.addText("→", { x: x + 2.82, y: 3.5, w: 0.35, h: 0.6, align: "center", fontFace: FONT, fontSize: 24, color: CYAN, bold: true })
   })
-  s.addText(
-    "If ONNX model files are absent, the system falls back to a labeled heuristic — so it always runs.",
-    { x: 0.7, y: 5.7, w: 11.9, h: 0.5, fontFace: MONO, fontSize: 12, color: MUTED, italic: true },
-  )
+  s.addText("If a model file cannot be loaded, the result falls back to a heuristic and is labelled as one.", {
+    x: 0.7, y: 5.7, w: 11.9, h: 0.5, fontFace: MONO, fontSize: 12, color: MUTED, italic: true,
+  })
 }
 
 // ---- Slide 6: Architecture ------------------------------------------------
@@ -289,28 +232,27 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   kicker(s, "System Architecture", "06 / 15")
   title(s, "Architecture Blueprint")
   card(s, 0.7, 2.05, 3.85, 4.6, "FRONTEND", [
-    "Next.js App Router",
+    "Next.js 16 App Router",
     "React 19 + TypeScript",
     "Tailwind CSS v4",
-    "Leaflet (map)",
-    "Three.js + R3F (3D)",
-    "SWR (fetch/cache)",
+    "Leaflet map",
+    "SWR (fetch / cache)",
   ], CYAN)
   card(s, 4.75, 2.05, 3.85, 4.6, "BACKEND / LOGIC", [
-    "Route Handler: GET /api/plan",
-    "lib/city — graph builder",
-    "lib/optimizer — Dijkstra",
-    "lib/sim — scenarios + metrics",
-    "lib/ml — ONNX inference",
-    "No database • No auth",
+    "Route handlers: /api/event/simulate,",
+    "  heatmap, isochrone, emergency,",
+    "  intelligence, navigation, geocode",
+    "lib/event-model-inputs: feature builder",
+    "lib/ml: ONNX inference",
+    "lib/guntur-graph: road-graph engine",
   ], CYAN)
   card(s, 8.8, 2.05, 3.85, 4.6, "ML + EXTERNAL", [
-    "PyTorch (offline training)",
-    "ONNX export (eta, congestion)",
-    "onnxruntime-node (serve)",
-    "OSM Nominatim (geocode)",
-    "Reverse geocode (area names)",
-    "Map tile basemaps",
+    "PyTorch (offline training) → ONNX",
+    "onnxruntime-node (serving)",
+    "OSRM routing",
+    "OpenStreetMap / Overpass roads",
+    "Nominatim geocoding",
+    "Open-Meteo weather + CAMS air quality",
   ], CYAN)
 }
 
@@ -321,12 +263,12 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   kicker(s, "Block Diagram", "07 / 15")
   title(s, "End-to-End Data Flow")
   const flow = [
-    "User input\n(location / mode / weights / scenario)",
-    "API /api/plan\nrebuild graph + generate invitees",
-    "Apply scenario\nmutate congestion + speed",
-    "Dijkstra routing\nbest / fastest / shortest",
-    "ML re-rank + forecast\nETA + congestion (ONNX)",
-    "Metrics + baseline\n→ JSON → Map / 2D / 3D",
+    "Pick route A → B\nreal roads via OSRM",
+    "Place event\nmap click or place search",
+    "Set details\ntype • time window • attendance",
+    "Build inputs\nbaseline vs with-event features",
+    "ONNX predict\nETA + congestion class",
+    "Compare + render\ndelay • ranking • heatmap • metrics",
   ]
   flow.forEach((f, i) => {
     const col = i % 3
@@ -334,15 +276,7 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
     const x = 0.7 + col * 4.1
     const y = 2.3 + row * 2.0
     const [head, sub] = f.split("\n")
-    s.addShape(pptx.ShapeType.roundRect, {
-      x,
-      y,
-      w: 3.7,
-      h: 1.5,
-      rectRadius: 0.08,
-      fill: { color: PANEL },
-      line: { color: CYAN, width: 1 },
-    })
+    s.addShape(pptx.ShapeType.roundRect, { x, y, w: 3.7, h: 1.5, rectRadius: 0.08, fill: { color: PANEL }, line: { color: CYAN, width: 1 } })
     s.addText(
       [
         { text: head + "\n", options: { color: CYAN, fontSize: 13, bold: true, fontFace: MONO } },
@@ -350,11 +284,12 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
       ],
       { x: x + 0.15, y: y + 0.15, w: 3.4, h: 1.2, valign: "middle", align: "center" },
     )
-    if (col < 2 && i < flow.length - 1) {
-      s.addText("→", { x: x + 3.7, y: y + 0.5, w: 0.4, h: 0.5, align: "center", fontSize: 22, color: CYAN, bold: true })
-    }
+    if (col < 2) s.addText("→", { x: x + 3.7, y: y + 0.5, w: 0.4, h: 0.5, align: "center", fontSize: 22, color: CYAN, bold: true })
   })
   s.addText("↓", { x: 4.55, y: 3.85, w: 0.4, h: 0.5, align: "center", fontSize: 22, color: CYAN, bold: true })
+  s.addText("The Traffic Time slider re-runs the prediction for any hour of the day.", {
+    x: 0.7, y: 6.4, w: 11.9, h: 0.4, fontFace: MONO, fontSize: 12, color: MUTED, italic: true,
+  })
 }
 
 // ---- Slide 8: Tech Stack --------------------------------------------------
@@ -369,23 +304,22 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
     "TypeScript",
     "Tailwind CSS v4",
     "Leaflet / react-leaflet",
-    "Three.js / R3F / Drei",
     "SWR • lucide-react",
   ])
   card(s, 4.75, 2.05, 3.85, 4.6, "BACKEND & ML", [
-    "Next.js Route Handlers",
+    "Next.js route handlers",
     "PyTorch (training)",
-    "NumPy (data gen)",
-    "ONNX (export)",
-    "onnxruntime-node (serve)",
+    "NumPy (data generation)",
+    "ONNX export",
+    "onnxruntime-node (serving)",
     "No database",
   ])
-  card(s, 8.8, 2.05, 3.85, 4.6, "SERVICES & DEV", [
-    "OpenStreetMap Nominatim",
-    "Map tile basemaps",
-    "pnpm • ESLint",
-    "PostCSS",
-    "Python 3.10+",
+  card(s, 8.8, 2.05, 3.85, 4.6, "DATA & QUALITY", [
+    "OSRM • Overpass • Nominatim",
+    "Open-Meteo • Copernicus CAMS",
+    "OSM-derived Guntur road graph",
+    "Vitest unit tests",
+    "Git / GitHub",
     "Vercel (hosting)",
   ])
 }
@@ -397,17 +331,15 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   kicker(s, "Key Features", "09 / 15")
   title(s, "What It Does")
   const feats = [
-    ["Worldwide search", "Any country / state / city; grid recenters, invitees regenerate."],
-    ["Event + Directions", "Group-to-venue routing, plus click-A / click-B trips."],
-    ["Weighted routing", "Best / fastest / shortest with time-distance-congestion sliders."],
-    ["Scenario simulator", "Accident, closure, surge, weather — with baseline comparison."],
-    ["Metrics dashboard", "Speed, congestion, AQI, response time, CO₂, fuel, travel time."],
-    ["AI model engine", "ONNX ETA + congestion, ETA re-routing, model/heuristic status."],
+    ["Event scheduler", "Up to three events with type, time window and attendance, scored together."],
+    ["Traffic time slider", "An event loads the roads only while it runs, peaking at its midpoint."],
+    ["Impact dashboard + heatmap", "Per-route baseline vs event ETA and a per-road congestion heatmap."],
+    ["Reachability, emergency, closures", "Isochrone view, emergency route check and what-if road closures."],
+    ["Organizer plan", "Staggered arrival waves, diversions and marshalling points, tested on the Guntur graph."],
+    ["Directions + route intelligence", "Point-to-point routes scored with weather, incidents and closures."],
   ]
   feats.forEach((f, i) => {
-    const col = i % 2
-    const row = Math.floor(i / 2)
-    card(s, 0.7 + col * 6.05, 2.05 + row * 1.55, 5.9, 1.35, f[0].toUpperCase(), [f[1]], CYAN)
+    card(s, 0.7 + (i % 2) * 6.05, 2.05 + Math.floor(i / 2) * 1.55, 5.9, 1.35, f[0].toUpperCase(), [f[1]], CYAN)
   })
 }
 
@@ -417,57 +349,35 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   base(s)
   kicker(s, "System Workflow", "10 / 15")
   title(s, "Request Lifecycle")
-  bullets(
-    s,
-    [
-      "User searches a location, picks Event or Directions mode, sets weights and a scenario.",
-      "Frontend builds a query string and calls GET /api/plan via SWR (polls every 15s to stay live).",
-      "Backend rebuilds the city graph centered on the location and generates invitees (or A/B points).",
-      "The active scenario mutates edge congestion and speed; incidents are added to the graph.",
-      "Dijkstra computes best / fastest / shortest routes per invitee.",
-      "ML layer predicts ETA per route and re-ranks them; congestion model forecasts ahead.",
-      "Metrics + a no-disruption baseline are computed and returned as JSON.",
-      "React renders Map / 2D / 3D views, the dashboard, and the baseline-vs-scenario table.",
-    ],
-    { y: 2.0, fontSize: 15 },
-  )
+  bullets(s, [
+    "The user places an event and presses Simulate Traffic Impact; the browser posts the events and routes to /api/event/simulate.",
+    "For each route the server builds model inputs twice: normal traffic at the evaluated hour, and the same hour with the event's proximity, severity and load.",
+    "Both are scored by the ETA and congestion ONNX models. Delay is the difference, so the same model explains both sides.",
+    "Routes no event reaches stay exactly at baseline. Routes are ranked by event-time ETA.",
+    "The heatmap routes event vehicles over the real Guntur road graph and applies BPR travel times.",
+    "The response carries its source (model or heuristic) and a note listing approximated inputs.",
+    "Dragging the time slider re-runs the same pipeline for the chosen hour.",
+  ], { y: 2.0, fontSize: 15 })
 }
 
-// ---- Slide 11: Core Modules & Algorithm -----------------------------------
+// ---- Slide 11: Method -----------------------------------------------------
 {
   const s = pptx.addSlide()
   base(s)
   kicker(s, "Implementation", "11 / 15")
-  title(s, "Core Modules & Algorithm")
+  title(s, "How the Simulation Works")
   card(s, 0.7, 2.05, 5.9, 4.4, "MODULES", [
-    "lib/city.ts — builds graph, centers on coords, nearest-node snap",
-    "lib/optimizer.ts — weighted Dijkstra, 3 cost modes",
-    "lib/sim.ts — scenario mutation + city metrics + baseline",
-    "lib/ml.ts — ONNX sessions, ETA re-rank, heuristic fallback",
-    "ml/ — schema.py, data.py, train.py (PyTorch → ONNX)",
+    "lib/event-model-inputs — training-compatible features, event phase, multi-event",
+    "lib/ml — ONNX sessions and decoding",
+    "lib/guntur-graph — directed OSM road graph, zone demand routing, BPR",
+    "lib/route-metrics — per-route metrics with source tags",
+    "ml/ — schema, data generator, PyTorch training",
   ])
-  s.addShape(pptx.ShapeType.roundRect, {
-    x: 6.75,
-    y: 2.05,
-    w: 5.9,
-    h: 4.4,
-    rectRadius: 0.08,
-    fill: { color: PANEL },
-    line: { color: LINE, width: 1 },
-  })
-  s.addText("WEIGHTED COST", {
-    x: 6.95,
-    y: 2.2,
-    w: 5.5,
-    h: 0.4,
-    fontFace: MONO,
-    fontSize: 13,
-    color: CYAN,
-    bold: true,
-  })
+  s.addShape(pptx.ShapeType.roundRect, { x: 6.75, y: 2.05, w: 5.9, h: 4.4, rectRadius: 0.08, fill: { color: PANEL }, line: { color: LINE, width: 1 } })
+  s.addText("CONGESTION WITH EVENTS", { x: 6.95, y: 2.2, w: 5.5, h: 0.4, fontFace: MONO, fontSize: 13, color: CYAN, bold: true })
   s.addText(
-    "cost(edge) =\n  wTime · timeNorm\n  + wDistance · distNorm\n  + wCongestion · congestion\n\nDijkstra minimizes the summed cost\nalong the path. Routes are then\nre-ranked by the ML-predicted ETA,\nso a longer detour can win when an\naccident makes it genuinely faster.",
-    { x: 6.95, y: 2.65, w: 5.5, h: 3.6, fontFace: MONO, fontSize: 13, color: TEXT, valign: "top", lineSpacingMultiple: 1.1 },
+    "c = base(hour, day)\n  + Σ boost(type) · reach(distance) · phase(time)\n\nreach: 1 at the venue, 0 at the impact radius\n(200 m + 5.8 m·√attendance, capped 1.5 km)\nphase: 0 outside the window, 1 at midpoint\n\nA route no event reaches stays at baseline.\nBPR: t = t0 · (1 + 0.15 · (v/c)^4)",
+    { x: 6.95, y: 2.65, w: 5.5, h: 3.6, fontFace: MONO, fontSize: 12, color: TEXT, valign: "top", lineSpacingMultiple: 1.1 },
   )
 }
 
@@ -478,77 +388,79 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   kicker(s, "ML / Deep Learning", "12 / 15")
   title(s, "The Model Engine")
   card(s, 0.7, 2.05, 5.9, 4.4, "ARCHITECTURE", [
-    "Two feed-forward MLP regressors",
-    "Layers: in → 128 → 128 → 64 → 1",
-    "ReLU • Dropout 0.1 • Adam + weight decay",
-    "Huber (SmoothL1) loss • cosine LR schedule",
-    "Best-checkpoint-by-val-MAE restored",
-    "Exported to ONNX (opset 17, dynamic batch)",
-    "Served in Node via onnxruntime-node",
+    "Two feed-forward networks, 9 inputs each",
+    "9 → 256 → 256 → 128 → 64 → output",
+    "BatchNorm • ReLU • Dropout 0.10–0.15",
+    "AdamW • LR halves on plateau • early stopping",
+    "ETA: SmoothL1 loss on log(future / current time)",
+    "Congestion: 5 classes, cross-entropy (smoothing 0.1)",
+    "Exported to ONNX (opset 18), served via onnxruntime-node",
   ])
-  card(s, 6.75, 2.05, 5.9, 4.4, "9 FEATURES + EVAL", [
-    "ETA: distance, congestion, segments,",
-    "     hour(sin,cos), weekend, density,",
-    "     scenario severity, rain",
-    "Congestion: current, step, hour(sin,cos),",
-    "     incident load, weekend, density,",
-    "     severity, rain",
-    "Trained on 40k synthetic samples/model",
-    "Metrics: MAE + R² → models/metrics.json",
-    "Fallback: labeled heuristic if no ONNX file",
+  card(s, 6.75, 2.05, 5.9, 2.5, "HELD-OUT RESULTS (30,000 SAMPLES)", [
+    "ETA  R² 0.94  •  within 20%: 92%",
+    "Congestion  accuracy 80%  •  macro-F1 0.81",
+    "Within one class: ~100%",
   ])
+  card(s, 6.75, 4.7, 5.9, 1.75, "READ CAREFULLY", [
+    "Synthetic data from our own generator, not real Guntur traffic. The models learned the simulator: a proof of concept to calibrate with observed counts.",
+  ], "F59E0B")
 }
 
-// ---- Slide 13: Results ----------------------------------------------------
+// ---- Slide 13: Reliability & honesty --------------------------------------
 {
   const s = pptx.addSlide()
   base(s)
-  kicker(s, "Results & Output", "13 / 15")
-  title(s, "What the System Delivers")
-  bullets(
-    s,
-    [
-      "End-to-end route planning for many invitees to a venue, and single A→B directions — for any location worldwide.",
-      "Three comparable routes (best / fastest / shortest) with live, tunable weights.",
-      "Scenario simulation with a baseline-vs-scenario impact table: travel time, speed, congestion, CO₂, fuel, incidents, AQI, response time.",
-      "Working ONNX inference path that re-ranks routes by predicted ETA and reports how many invitees were re-routed.",
-      "Transparent 'ONNX active / Heuristic' indicator and a short-horizon congestion forecast strip.",
-      "Map + 2D/3D holographic visualizations and an in-app presentation deck.",
-      "Training produces metrics.json with MAE / R² per model (values depend on the run).",
-    ],
-    { y: 2.0, fontSize: 15 },
-  )
+  kicker(s, "Reliability & Honesty", "13 / 15")
+  title(s, "Every Number Says Where It Came From")
+  card(s, 0.7, 2.05, 3.85, 4.6, "PROVENANCE", [
+    "Badged \"ONNX model\" only if every prediction came from a model",
+    "Metrics carry a source tag; CO₂ and fuel are marked estimates",
+    "Approximated inputs are listed in the response",
+    "Multi-event is flagged as an extrapolation",
+  ], CYAN)
+  card(s, 4.75, 2.05, 3.85, 4.6, "WORKS WHEN SERVICES FAIL", [
+    "Routing: retry, then the local Guntur road graph",
+    "Geocoding: local Guntur landmark list",
+    "Nearby places: Overpass → Nominatim → landmarks",
+    "Heatmap: computed locally from the road graph",
+    "Weather / air quality: labelled unavailable",
+  ], CYAN)
+  card(s, 8.8, 2.05, 3.85, 4.6, "TESTED", [
+    "Vitest unit tests for feature encoders and decoders",
+    "Event-input builder with reference values from the training code",
+    "Road-graph routing and BPR tests",
+    "Fallback and retry logic tests",
+  ], CYAN)
 }
 
-// ---- Slide 14: Advantages / Limitations / Future --------------------------
+// ---- Slide 14: Evaluation -------------------------------------------------
 {
   const s = pptx.addSlide()
   base(s)
   kicker(s, "Evaluation", "14 / 15")
   title(s, "Advantages · Limitations · Future")
   card(s, 0.7, 2.05, 3.85, 4.6, "ADVANTAGES", [
-    "Works globally, not one city",
-    "Transparent, tunable routing",
-    "Digital-twin what-if simulation",
-    "Real PyTorch → ONNX models",
-    "Map + 2D/3D + dashboard",
-    "Clean, extensible layers",
+    "Predicts event impact with trained models",
+    "Baseline and event use the same model",
+    "Real Guntur roads, offline-capable",
+    "Handles several events and any hour",
+    "Honest labels on every result",
+    "Unit-tested core",
   ], CYAN)
   card(s, 4.75, 2.05, 3.85, 4.6, "LIMITATIONS", [
-    "Synthetic 8×8 grid, not real roads",
-    "Simulated (not live) traffic",
-    "ML trained on synthetic data",
-    "No database / auth / test suite",
-    "Auto-generated invitees",
-    "Nominatim rate limits area names",
+    "Models trained on synthetic data",
+    "Current congestion and capacity approximated for OSRM routes",
+    "Trained on single events",
+    "Directions scoring is heuristic",
+    "Forecast curve is parametric",
+    "No database, auth or live traffic",
   ], "F59E0B")
   card(s, 8.8, 2.05, 3.85, 4.6, "FUTURE SCOPE", [
-    "Real road graph (OSM / OSRM)",
-    "Real traffic data + a GNN model",
-    "Persistence + accounts + guest lists",
-    "Live traffic / weather feeds",
-    "Automated tests + CI",
-    "Plan export + multi-venue",
+    "Calibrate with observed Guntur counts",
+    "Live traffic API for real congestion",
+    "Compare plans side by side; export for marshals",
+    "Explain each prediction (feature drivers)",
+    "Persistence, accounts, alerts",
   ], CYAN)
 }
 
@@ -558,30 +470,12 @@ function card(slide, x, y, w, h, heading, lines, accent = CYAN) {
   s.background = { color: BG }
   s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: W, h: 0.08, fill: { color: CYAN } })
   s.addShape(pptx.ShapeType.rect, { x: 0, y: H - 0.08, w: W, h: 0.08, fill: { color: CYAN } })
-  s.addText("Conclusion", {
-    x: 0.6,
-    y: 2.2,
-    w: 12,
-    h: 0.9,
-    fontFace: FONT,
-    fontSize: 36,
-    color: TEXT,
-    bold: true,
-  })
+  s.addText("Conclusion", { x: 0.6, y: 2.2, w: 12, h: 0.9, fontFace: FONT, fontSize: 36, color: TEXT, bold: true })
   s.addText(
-    "RouteCast unifies classic shortest-path optimization, a transparent traffic simulator, and trained deep-learning models into a single global, presentation-ready digital twin for event routing.",
+    "RouteCast turns a scheduled event into a predicted, explainable traffic impact on real Guntur roads — with trained models, a transparent method, and honest labels on every number.",
     { x: 0.65, y: 3.2, w: 11.5, h: 1.4, fontFace: FONT, fontSize: 18, color: TEXT, lineSpacingMultiple: 1.2 },
   )
-  s.addText("Thank you  —  Questions?", {
-    x: 0.65,
-    y: 5.2,
-    w: 12,
-    h: 0.6,
-    fontFace: MONO,
-    fontSize: 20,
-    color: CYAN,
-    bold: true,
-  })
+  s.addText("Thank you  —  Questions?", { x: 0.65, y: 5.2, w: 12, h: 0.6, fontFace: MONO, fontSize: 20, color: CYAN, bold: true })
 }
 
 await pptx.writeFile({ fileName: OUT })

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /**
  * Shared TypeScript types for the RouteCast API layer.
  *
@@ -58,10 +57,22 @@ export type EventImpactRoute = {
   recommended: boolean
   reason: string
   source: "model" | "heuristic"
+  /** Names of the events that load this route at the evaluated time. */
+  affectedBy?: string[]
+  /** Which inputs drove the event delay (Shapley attribution on the ETA model). Absent for heuristic or unaffected routes. */
+  explanation?: {
+    freeFlowMin: number
+    normalTrafficMin: number
+    totalDelayMin: number
+    drivers: { id: string; label: string; minutes: number; share: number }[]
+  }
 }
 
 export type EventSimulationResponse = {
+  /** The first (or focused) event. */
   event: ScheduledEvent
+  /** Every event combined in this simulation, in request order. */
+  events?: ScheduledEvent[]
   routes: EventImpactRoute[]
   /** Forecast of congestion across the simulation time window */
   forecast: { minutesFromStart: number; congestion: number; label: string }[]
@@ -72,6 +83,12 @@ export type EventSimulationResponse = {
   simulatedAt: string
   source: "model" | "heuristic"
   note: string
+  /**
+   * When the per-route predictions were evaluated. "event-peak" is the default
+   * view; "time-slider" means the caller supplied an hour and `eventIntensity`
+   * is the event phase at that hour (0 = event not running).
+   */
+  evaluation?: { hour: number; eventIntensity: number; basis: "event-peak" | "time-slider" }
 }
 
 // ---------------------------------------------------------------------------
@@ -87,74 +104,7 @@ export type ScenarioType =
   | "flood"
 
 // ---------------------------------------------------------------------------
-// City metrics — kept for dashboard and event impact displays.
-// ---------------------------------------------------------------------------
-
-export type CityMetrics = {
-  avgSpeedKmh: number
-  congestionIndex: number // 0..1
-  activeIncidents: number
-  aqi: number // air-quality index
-  ambulanceResponseMin: number
-  co2Kg: number
-  fuelL: number
-}
-
-// ---------------------------------------------------------------------------
 // Re-exports from the intel hook (avoids deep imports in components)
 // ---------------------------------------------------------------------------
 
 export type { Intel, IntelResponse, IntelScenarioType } from "@/hooks/use-route-intel"
-=======
-import type { CityNode } from "./city"
-import type { Route } from "./optimizer"
-import type { EventPlan, Invitee } from "./store"
-import type { Scenario, Incident, CityMetrics, PollutionZone, ForecastPoint } from "./sim"
-
-export type PlanResponse = {
-  mode: "event" | "directions"
-  event: EventPlan
-  weights: { time: number; distance: number; congestion: number }
-  scenario: Scenario
-  graph: {
-    nodes: CityNode[]
-    edges: { from: string; to: string; congestion: number }[]
-  }
-  plans: {
-    invitee: Invitee
-    recommended: Route | null
-    alternatives: Route[]
-    etaSource: "model" | "heuristic"
-    rerouted: boolean
-  }[]
-  incidents: Incident[]
-  pollution: PollutionZone[]
-  forecast: ForecastPoint[]
-  forecastSource: "model" | "heuristic"
-  // ML model status + the location/scenario context used for predictions
-  ml: {
-    eta: boolean
-    congestion: boolean
-    etaSource: "model" | "heuristic"
-    reroutedCount: number
-    context: {
-      hour: number
-      isWeekend: boolean
-      areaDensity: number
-      scenarioSeverity: number
-      rain: number
-    }
-  }
-  // current (scenario-applied) vs baseline (no scenario) for impact comparison
-  metrics: CityMetrics
-  avgTravelMin: number
-  baseline: {
-    metrics: CityMetrics
-    avgTravelMin: number
-  }
-  serverTime: number
-}
-
-export type { CityNode, Route, EventPlan, Invitee }
-export type { Scenario, ScenarioType, Incident, CityMetrics, PollutionZone, ForecastPoint } from "./sim"
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975

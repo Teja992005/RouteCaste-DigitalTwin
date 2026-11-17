@@ -18,17 +18,11 @@ import {
   Play,
   GripVertical,
 } from "lucide-react"
-<<<<<<< HEAD
 import type { NavigationErrorWithActions, NavPoint, NavRoute, TravelMode } from "@/hooks/use-navigation-route"
 import type { GeoStatus } from "@/hooks/use-geolocation"
 import type { NavState } from "@/hooks/use-nav-session"
 import { GUNTUR_PLACES } from "@/lib/guntur-places"
 import type { EventSimulationResponse } from "@/lib/types"
-=======
-import type { NavPoint, NavRoute, TravelMode } from "@/hooks/use-navigation-route"
-import type { GeoStatus } from "@/hooks/use-geolocation"
-import type { NavState } from "@/hooks/use-nav-session"
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
 type GeoPlace = {
   id: string
@@ -55,7 +49,6 @@ function mins(s: number) {
   if (total < 60) return `${total} min`
   return `${Math.floor(total / 60)} h ${total % 60} min`
 }
-<<<<<<< HEAD
 function emissions(distanceMeters: number, congestionLoad: number) {
   const distKm = distanceMeters / 1000
   const multiplier = 1 + Math.min(1, congestionLoad) * 0.6
@@ -66,8 +59,6 @@ function emissions(distanceMeters: number, congestionLoad: number) {
     fuel: `${fuel.toFixed(2)} L`,
   }
 }
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
 /** Search-as-you-type place field backed by the server geocoder. */
 function PlaceField({
@@ -199,12 +190,8 @@ type Props = {
   activeRouteId: string | null
   onActiveRoute: (id: string) => void
   loading: boolean
-<<<<<<< HEAD
   error: NavigationErrorWithActions | null
   isFromCache?: boolean
-=======
-  error: string | null
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   engine?: string
   trafficNote?: string
   /** Multi-stop support — ordered intermediate stops. */
@@ -215,10 +202,7 @@ type Props = {
   onUseMyLocation: () => void
   navState: NavState
   onStartNav: () => void
-<<<<<<< HEAD
   simulationResult?: EventSimulationResponse | null
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 }
 
 export function NavigationPanel({
@@ -233,10 +217,7 @@ export function NavigationPanel({
   onActiveRoute,
   loading,
   error,
-<<<<<<< HEAD
   isFromCache = false,
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   engine,
   trafficNote,
   waypoints,
@@ -246,7 +227,6 @@ export function NavigationPanel({
   onUseMyLocation,
   navState,
   onStartNav,
-<<<<<<< HEAD
   simulationResult = null,
 }: Props) {
   const [showSteps, setShowSteps] = useState(true)
@@ -259,19 +239,18 @@ export function NavigationPanel({
     if (!isFromCache) setCacheNoticeDismissed(false)
   }, [isFromCache])
 
-=======
-}: Props) {
-  const [showSteps, setShowSteps] = useState(true)
-  const active = routes.find((r) => r.id === activeRouteId) ?? routes[0] ?? null
-
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   return (
     <section className="rounded-xl border border-border bg-card/50 p-3">
       <div className="flex items-center justify-between">
         <h2 className="font-mono text-xs uppercase tracking-widest text-primary">Navigation</h2>
         {engine && (
-          <span className="rounded-full border border-primary/40 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-primary">
-            {engine} · osm
+          <span
+            className={`rounded-full border px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider ${
+              engine.includes("offline") ? "border-amber-500/60 text-amber-400" : "border-primary/40 text-primary"
+            }`}
+            title={engine.includes("offline") ? "Live routing was unavailable; this route uses the local Guntur road graph at free-flow speed." : undefined}
+          >
+            {engine.includes("offline") ? engine : `${engine} · osm`}
           </span>
         )}
       </div>
@@ -387,7 +366,6 @@ export function NavigationPanel({
         />
       </div>
 
-<<<<<<< HEAD
       <div className="mt-2">
         <button
           type="button"
@@ -435,8 +413,6 @@ export function NavigationPanel({
         )}
       </div>
 
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
       {/* Travel mode */}
       <div className="mt-3 flex gap-1 rounded-lg border border-border bg-background/60 p-0.5">
         {MODES.map(({ id, label, Icon }) => (
@@ -459,7 +435,6 @@ export function NavigationPanel({
           <Loader2 className="h-3 w-3 animate-spin text-primary" /> Calculating route…
         </p>
       )}
-<<<<<<< HEAD
       {isFromCache && !cacheNoticeDismissed && (
         <div className="mb-2 flex items-center gap-2 rounded-lg border border-amber-400/40 bg-amber-400/5 px-3 py-2 font-mono text-[10px] text-amber-300">
           <span className="flex-shrink-0">📦</span>
@@ -501,12 +476,6 @@ export function NavigationPanel({
             </button>
           </div>
         </div>
-=======
-      {error && !loading && (
-        <p className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-2 py-1.5 font-mono text-[10px] text-destructive">
-          {error}
-        </p>
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
       )}
       {!loading && !error && (!from || !to) && (
         <p className="mt-3 font-mono text-[10px] text-muted-foreground">Set a start and destination to route.</p>
@@ -517,11 +486,8 @@ export function NavigationPanel({
         <ul className="mt-3 flex flex-col gap-1.5">
           {routes.map((r) => {
             const isActive = active?.id === r.id
-<<<<<<< HEAD
             const eventRoute = simulationResult?.routes.find((candidate) => candidate.routeId === r.id) ??
               simulationResult?.routes.find((candidate) => candidate.label.trim().toLowerCase() === r.label.trim().toLowerCase())
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
             return (
               <li key={r.id}>
                 <button
@@ -531,7 +497,6 @@ export function NavigationPanel({
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-<<<<<<< HEAD
                     <span className="flex min-w-0 flex-wrap items-center gap-1">
                       <span
                         className={`font-mono text-[9px] uppercase tracking-widest ${
@@ -548,28 +513,15 @@ export function NavigationPanel({
                       )}
                     </span>
                     <span className="font-mono text-[11px] text-foreground">{mins(r.durationSeconds)}</span>
-=======
-                    <span
-                      className={`font-mono text-[9px] uppercase tracking-widest ${
-                        isActive ? "text-primary" : "text-muted-foreground"
-                      }`}
-                    >
-                      {r.label}
-                    </span>
-                    <span className="font-mono text-[11px] text-foreground">{mins(r.duration_seconds)}</span>
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
                   </div>
                   <div className="mt-0.5 flex items-center justify-between gap-2">
                     <span className="truncate font-mono text-[10px] text-muted-foreground">
                       {r.summary || `${r.steps.length} steps`}
                     </span>
-<<<<<<< HEAD
                     <span className="font-mono text-[10px] text-primary">{km(r.distanceMeters)}</span>
                   </div>
                   {(() => {
-                    const load = eventRoute?.congestionScore != null
-                      ? eventRoute.congestionScore / 100
-                      : simulationResult?.event.eventLoad ?? 0
+                    const load = eventRoute ? eventRoute.congestionDuring : simulationResult?.event.eventLoad ?? 0
                     const { co2, fuel } = emissions(r.distanceMeters, load)
                     return (
                       <div className="mt-1 flex items-center gap-2 font-mono text-[9px] text-muted-foreground">
@@ -579,10 +531,6 @@ export function NavigationPanel({
                       </div>
                     )
                   })()}
-=======
-                    <span className="font-mono text-[10px] text-primary">{km(r.distance_meters)}</span>
-                  </div>
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
                 </button>
               </li>
             )

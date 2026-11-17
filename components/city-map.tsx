@@ -1,17 +1,11 @@
 "use client"
 
 import "leaflet/dist/leaflet.css"
-<<<<<<< HEAD
 import { divIcon } from "leaflet"
-import { useEffect } from "react"
+import { Fragment, useEffect } from "react"
 import { MapContainer, TileLayer, Polyline, Polygon, Circle, CircleMarker, Marker, Popup, Rectangle, Tooltip, useMap, useMapEvents } from "react-leaflet"
 import { GUNTUR_BOUNDS, GUNTUR_CENTER, GUNTUR_DEFAULT_ZOOM } from "@/lib/guntur-places"
 import type { EventSimulationResponse } from "@/lib/types"
-=======
-import { useEffect } from "react"
-import { MapContainer, TileLayer, Polyline, Circle, CircleMarker, Tooltip, useMap, useMapEvents } from "react-leaflet"
-import type { PlanResponse } from "@/lib/types"
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
 export type FlyTarget = { lat: number; lng: number; zoom?: number; nonce: number }
 export type LatLng = { lat: number; lng: number }
@@ -21,7 +15,12 @@ function FlyController({ target }: { target: FlyTarget | null }) {
   const map = useMap()
   useEffect(() => {
     if (!target) return
-    map.flyTo([target.lat, target.lng], target.zoom ?? 15, { duration: 1.6 })
+    // The map can be torn down between an effect being queued and running (dev hot reload, fast navigation); never let that crash the page.
+    try {
+      map.flyTo([target.lat, target.lng], target.zoom ?? 15, { duration: 1.6 })
+    } catch {
+      /* map not ready */
+    }
   }, [target, map])
   return null
 }
@@ -32,7 +31,11 @@ function FitRoute({ latLngs }: { latLngs: [number, number][] }) {
   const key = latLngs.length ? `${latLngs.length}:${latLngs[0]}:${latLngs[latLngs.length - 1]}` : ""
   useEffect(() => {
     if (latLngs.length < 2) return
-    map.fitBounds(latLngs, { padding: [40, 40], animate: true })
+    try {
+      map.fitBounds(latLngs, { padding: [40, 40], animate: true })
+    } catch {
+      /* map not ready */
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, map])
   return null
@@ -43,7 +46,11 @@ function FollowController({ pos, enabled }: { pos: LatLng | null; enabled: boole
   const map = useMap()
   useEffect(() => {
     if (!enabled || !pos) return
-    map.panTo([pos.lat, pos.lng], { animate: true, duration: 0.6 })
+    try {
+      map.panTo([pos.lat, pos.lng], { animate: true, duration: 0.6 })
+    } catch {
+      /* map not ready */
+    }
   }, [pos?.lat, pos?.lng, enabled, map])
   return null
 }
@@ -89,11 +96,7 @@ function MapButtons({ onLocate }: { onLocate?: () => void }) {
   )
 }
 
-<<<<<<< HEAD
 // Forwards map clicks up — always fires; the page decides what to do with it.
-=======
-// Forwards map clicks up so the page can set trip start/end points.
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 function ClickHandler({ onClick }: { onClick?: (p: LatLng) => void }) {
   useMapEvents({
     click(e) {
@@ -111,16 +114,6 @@ export type MapLayers = {
   closures: boolean
 }
 
-<<<<<<< HEAD
-=======
-// color a road by its congestion (0 free -> 1 gridlocked)
-function congestionColor(c: number): string {
-  if (c < 0.35) return "#22d3ee" // cyan - free
-  if (c < 0.6) return "#facc15" // amber - moderate
-  return "#f43f5e" // red - heavy
-}
-
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 /** A real routing-engine result to draw (active one highlighted). */
 export type NavGeometry = {
   id: string
@@ -129,23 +122,12 @@ export type NavGeometry = {
 }
 
 type Props = {
-<<<<<<< HEAD
   basemap: Basemap
   layers: MapLayers
   flyTo?: FlyTarget | null
   tripStart?: LatLng | null
   tripEnd?: LatLng | null
   /** Always fires on map click — the page decides the action */
-=======
-  data: PlanResponse
-  selectedInviteeId: string | null
-  basemap: Basemap
-  layers: MapLayers
-  flyTo?: FlyTarget | null
-  directions?: boolean
-  tripStart?: LatLng | null
-  tripEnd?: LatLng | null
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   onMapClick?: (p: LatLng) => void
   navRoutes?: NavGeometry[]
   activeNavId?: string | null
@@ -173,36 +155,39 @@ type Props = {
   }[]
   /** Suppresses route auto-fit so it can't fight the follow camera. */
   navigating?: boolean
-<<<<<<< HEAD
   /** User-placed event pin with impact rings (250m red, 500m amber, 1000m cyan). */
   eventPin?: { lat: number; lng: number; name: string; radiusMeters: number } | null
+  /** Other simulated events (besides the selected pin), drawn as impact zones. */
+  otherEvents?: { id: string; lat: number; lng: number; name: string; radiusMeters: number }[]
   /** Simulation result used to colour routes and show the event hotspot. */
   simulationResult?: EventSimulationResponse | null
   /** Nearby OSM road segments with event-simulation congestion scores. */
-  heatmapSegments?: { points: [number, number][]; congestion: number; highway: string }[]
+  heatmapSegments?: { points: [number, number][]; congestion: number; highway: string; baseCongestion?: number; delaySec?: number }[]
+  /** event = congestion with the event, normal = without it, change = delay the event adds. */
+  heatMode?: "event" | "normal" | "change"
   /** Reachable-area hull under normal and event-affected conditions. */
   isochroneNormal?: [number, number][]
   isochroneAffected?: [number, number][]
   /** Priority corridor calculated for an emergency vehicle. */
   emergencyRoute?: [number, number][]
+  /** Organizer-plan diversions (dashed amber) and marshalling points. */
+  planOverlay?: { diversions: { id: string; label: string; latLngs: [number, number][] }[]; staging: { id: string; label: string; lat: number; lng: number }[] } | null
   /** Two-point road closure drawn by the city planner. */
   closurePoints?: [{ lat: number; lng: number }, { lat: number; lng: number }] | null
   /** Show the Guntur study-area bounding box. */
   showStudyArea?: boolean
 }
 
-function CongestionLegend({ visible }: { visible: boolean }) {
+function CongestionLegend({ visible, mode = "event" }: { visible: boolean; mode?: "event" | "normal" | "change" }) {
   if (!visible) return null
+  const items = mode === "change"
+    ? [{ color: "#64748b", label: "No change" }, { color: "#facc15", label: "+3–20 s" }, { color: "#f97316", label: "+20–60 s" }, { color: "#f43f5e", label: "+60 s or more" }]
+    : [{ color: "#22c55e", label: "Free flow" }, { color: "#facc15", label: "Moderate" }, { color: "#f97316", label: "Heavy" }, { color: "#f43f5e", label: "Severe" }]
   return (
     <div className="leaflet-bottom leaflet-left" style={{ pointerEvents: "none" }}>
       <div className="leaflet-control m-3 rounded-lg border border-border/60 bg-card/80 px-3 py-2 backdrop-blur-sm" style={{ pointerEvents: "none" }}>
-        <p className="mb-1.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">Congestion</p>
-        {[
-          { color: "#22c55e", label: "Free flow" },
-          { color: "#facc15", label: "Moderate" },
-          { color: "#f97316", label: "Heavy" },
-          { color: "#f43f5e", label: "Severe" },
-        ].map(({ color, label }) => (
+        <p className="mb-1.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">{mode === "change" ? "Delay added by event" : mode === "normal" ? "Congestion — normal traffic" : "Congestion — with event"}</p>
+        {items.map(({ color, label }) => (
           <div key={label} className="flex items-center gap-2 py-0.5">
             <span style={{ backgroundColor: color }} className="inline-block h-2 w-5 flex-shrink-0 rounded-sm" />
             <span className="font-mono text-[9px] text-foreground">{label}</span>
@@ -217,17 +202,6 @@ export function CityMap({
   basemap,
   layers,
   flyTo = null,
-=======
-}
-
-export function CityMap({
-  data,
-  selectedInviteeId,
-  basemap,
-  layers,
-  flyTo = null,
-  directions = false,
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   tripStart = null,
   tripEnd = null,
   onMapClick,
@@ -242,13 +216,15 @@ export function CityMap({
   onLocate,
   geoIncidents = [],
   navigating = false,
-<<<<<<< HEAD
   eventPin = null,
+  otherEvents = [],
   simulationResult = null,
   heatmapSegments = [],
+  heatMode = "event",
   isochroneNormal = [],
   isochroneAffected = [],
   emergencyRoute = [],
+  planOverlay = null,
   closurePoints = null,
   showStudyArea = false,
 }: Props) {
@@ -256,20 +232,6 @@ export function CityMap({
     <MapContainer
       center={[GUNTUR_CENTER.lat, GUNTUR_CENTER.lng]}
       zoom={GUNTUR_DEFAULT_ZOOM}
-=======
-}: Props) {
-  const nodeById = Object.fromEntries(data.graph.nodes.map((n) => [n.id, n]))
-  const venue = nodeById[data.event.venueNodeId]
-
-  const pollution = data.pollution ?? []
-  const incidents = data.incidents ?? []
-  const visiblePlans = selectedInviteeId ? data.plans.filter((p) => p.invitee.id === selectedInviteeId) : data.plans
-
-  return (
-    <MapContainer
-      center={[venue.lat, venue.lng]}
-      zoom={14}
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
       className="h-full w-full"
       style={{ background: "#0a1420" }}
       zoomControl={false}
@@ -280,11 +242,7 @@ export function CityMap({
       )}
       <FollowController pos={currentPos} enabled={followPos} />
       <MapButtons onLocate={onLocate} />
-<<<<<<< HEAD
       <ClickHandler onClick={onMapClick} />
-=======
-      {directions && <ClickHandler onClick={onMapClick} />}
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
       {/* Basemap */}
       {basemap === "dark" && (
@@ -318,7 +276,6 @@ export function CityMap({
         />
       )}
 
-<<<<<<< HEAD
       {isochroneAffected.length > 0 && (
         <Polygon
           positions={isochroneAffected}
@@ -338,22 +295,34 @@ export function CityMap({
 
       {/* Event congestion heatmap — rendered below route lines. */}
       {layers.traffic && heatmapSegments.map((segment, index) => {
-        const color = segment.congestion < 0.35
-          ? "#22c55e"
-          : segment.congestion < 0.6
-            ? "#facc15"
-            : segment.congestion < 0.8
-              ? "#f97316"
-              : "#f43f5e"
+        const level = heatMode === "normal" ? (segment.baseCongestion ?? segment.congestion) : segment.congestion
+        const heat = (v: number) => (v < 0.35 ? "#22c55e" : v < 0.6 ? "#facc15" : v < 0.8 ? "#f97316" : "#f43f5e")
+        const delay = segment.delaySec ?? 0
+        const changeColor = delay < 3 ? "#64748b" : delay < 20 ? "#facc15" : delay < 60 ? "#f97316" : "#f43f5e"
+        const color = heatMode === "change" ? changeColor : heat(level)
+        const quiet = heatMode === "change" && delay < 3
         const minorRoad = segment.highway === "residential" || segment.highway === "unclassified"
         return (
           <Polyline
             key={`heatmap-${segment.highway}-${index}`}
             positions={segment.points}
-            pathOptions={{ color, weight: minorRoad ? 2 : 3, opacity: 0.7 }}
+            pathOptions={{ color, weight: minorRoad ? 2 : 3, opacity: quiet ? 0.25 : 0.7 }}
           />
         )
       })}
+
+      {planOverlay?.diversions.map((d) =>
+        d.latLngs.length >= 2 ? (
+          <Polyline key={`plan-div-${d.id}`} positions={d.latLngs} pathOptions={{ color: "#f59e0b", weight: 4, opacity: 0.95, dashArray: "8 8" }}>
+            <Tooltip sticky>Diversion — {d.label}</Tooltip>
+          </Polyline>
+        ) : null,
+      )}
+      {planOverlay?.staging.map((m) => (
+        <CircleMarker key={`plan-stage-${m.id}`} center={[m.lat, m.lng]} radius={9} pathOptions={{ color: "#f59e0b", weight: 3, fillColor: "#0a1420", fillOpacity: 1 }}>
+          <Tooltip direction="top">{m.label}</Tooltip>
+        </CircleMarker>
+      ))}
 
       {emergencyRoute.length >= 2 && (
         <>
@@ -363,63 +332,6 @@ export function CityMap({
           </Polyline>
         </>
       )}
-=======
-      {/* Pollution heat zones (derived from congestion) */}
-      {layers.pollution &&
-        pollution.map((z, i) => (
-          <CircleMarker
-            key={`poll-${i}`}
-            center={[z.lat, z.lng]}
-            radius={22 * z.intensity}
-            pathOptions={{
-              color: "transparent",
-              fillColor: "#f43f5e",
-              fillOpacity: 0.08 + z.intensity * 0.18,
-              weight: 0,
-            }}
-          />
-        ))}
-
-      {/* Road network colored by live traffic (simulated grid) */}
-      {layers.traffic &&
-        navRoutes.length === 0 &&
-        data.graph.edges.map((e, i) => {
-          const a = nodeById[e.from]
-          const b = nodeById[e.to]
-          if (!a || !b) return null
-          return (
-            <Polyline
-              key={i}
-              positions={[
-                [a.lat, a.lng],
-                [b.lat, b.lng],
-              ]}
-              pathOptions={{ color: congestionColor(e.congestion), weight: 2, opacity: 0.55 }}
-            />
-          )
-        })}
-
-      {/* Road closures / blocked segments (congestion near gridlock) */}
-      {layers.closures &&
-        navRoutes.length === 0 &&
-        data.graph.edges
-          .filter((e) => e.congestion >= 0.9)
-          .map((e, i) => {
-            const a = nodeById[e.from]
-            const b = nodeById[e.to]
-            if (!a || !b) return null
-            return (
-              <Polyline
-                key={`clo-${i}`}
-                positions={[
-                  [a.lat, a.lng],
-                  [b.lat, b.lng],
-                ]}
-                pathOptions={{ color: "#f43f5e", weight: 5, opacity: 0.9, dashArray: "4 6" }}
-              />
-            )
-          })}
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
       {/* Real routing-engine geometry (OSM/OSRM): inactive alternatives first */}
       {navRoutes
@@ -437,7 +349,6 @@ export function CityMap({
         .filter((r) => r.id === (activeNavId ?? navRoutes[0]?.id))
         .map((r) => (
           <div key={`nav-${r.id}`}>
-<<<<<<< HEAD
             {(() => {
               const simRoute = simulationResult?.routes.find((sr) => sr.routeId === r.id)
               const cong = simRoute?.congestionDuring ?? 0
@@ -524,128 +435,6 @@ export function CityMap({
 
       {/* Point-to-point trip markers (A / B) */}
       {tripStart && (
-=======
-            <Polyline positions={r.latLngs} pathOptions={{ color: "#22d3ee", weight: 12, opacity: 0.2 }} />
-            <Polyline positions={r.latLngs} pathOptions={{ color: "#67e8f9", weight: 5, opacity: 0.95 }}>
-              <Tooltip sticky>{r.label}</Tooltip>
-            </Polyline>
-          </div>
-        ))}
-
-      {/* Simulated grid routes (hidden once a real route is loaded) */}
-      {navRoutes.length === 0 &&
-        visiblePlans.map((p) => {
-        if (!p.recommended) return null
-        const pts = p.recommended.path.map((pt) => [pt.lat, pt.lng] as [number, number])
-        return (
-          <div key={p.invitee.id}>
-            <Polyline positions={pts} pathOptions={{ color: "#22d3ee", weight: 10, opacity: 0.18 }} />
-            <Polyline positions={pts} pathOptions={{ color: "#67e8f9", weight: 3, opacity: 0.95 }} />
-          </div>
-        )
-      })}
-
-      {/* Alternative routes when a single invitee is selected */}
-      {navRoutes.length === 0 &&
-        selectedInviteeId &&
-        visiblePlans[0]?.alternatives.map((alt, i) => {
-          const pts = alt.path.map((pt) => [pt.lat, pt.lng] as [number, number])
-          return (
-            <Polyline
-              key={`alt-${i}`}
-              positions={pts}
-              pathOptions={{ color: "#94a3b8", weight: 2, opacity: 0.5, dashArray: "6 8" }}
-            />
-          )
-        })}
-
-        {/* Real incidents: affected area (metres) + centre marker */}
-        {layers.incidents &&
-          geoIncidents.map((inc) => {
-            const color =
-              inc.severity === "critical" || inc.type === "closure" || inc.type === "flooding"
-                ? "#f97316"
-                : inc.severity === "high"
-                  ? "#f43f5e"
-                  : "#facc15"
-            return (
-              <div key={`geo-${inc.id}`}>
-                <Circle
-                  center={[inc.lat, inc.lon]}
-                  radius={inc.radiusMeters}
-                  pathOptions={{
-                    color,
-                    weight: 1.5,
-                    opacity: 0.8,
-                    fillColor: color,
-                    fillOpacity: 0.14,
-                    dashArray: inc.origin === "simulated" ? "6 4" : undefined,
-                  }}
-                />
-                <CircleMarker
-                  center={[inc.lat, inc.lon]}
-                  radius={7}
-                  pathOptions={{ color, weight: 2, fillColor: color, fillOpacity: 0.9 }}
-                >
-                  <Tooltip direction="top">
-                    {inc.origin === "simulated" ? "SIMULATED · " : ""}
-                    {inc.type} ({inc.severity}) — {inc.description}
-                  </Tooltip>
-                </CircleMarker>
-              </div>
-            )
-          })}
-
-        {/* Incident markers */}
-        {layers.incidents &&
-        incidents.map((inc) => {
-          const n = nodeById[inc.nodeId]
-          if (!n) return null
-          const color = inc.kind === "closure" ? "#f97316" : "#f43f5e"
-          return (
-            <CircleMarker
-              key={inc.id}
-              center={[n.lat, n.lng]}
-              radius={9}
-              pathOptions={{ color, fillColor: color, fillOpacity: 0.85, weight: 2 }}
-            >
-              <Tooltip direction="top">{inc.label}</Tooltip>
-            </CircleMarker>
-          )
-        })}
-
-      {/* Invitee origins */}
-      {navRoutes.length === 0 &&
-        visiblePlans.map((p) => {
-        const n = nodeById[p.invitee.originNodeId]
-        return (
-          <CircleMarker
-            key={p.invitee.id}
-            center={[n.lat, n.lng]}
-            radius={6}
-            pathOptions={{ color: "#67e8f9", fillColor: "#0a1420", fillOpacity: 1, weight: 2 }}
-          >
-            <Tooltip direction="top">{p.invitee.name}</Tooltip>
-          </CircleMarker>
-        )
-      })}
-
-      {/* Venue (hidden in directions mode; the B marker stands in for it) */}
-      {!directions && (
-        <CircleMarker
-          center={[venue.lat, venue.lng]}
-          radius={10}
-          pathOptions={{ color: "#22d3ee", fillColor: "#22d3ee", fillOpacity: 0.9, weight: 3 }}
-        >
-          <Tooltip direction="top" permanent>
-            {data.event.name}
-          </Tooltip>
-        </CircleMarker>
-      )}
-
-      {/* Point-to-point trip markers */}
-      {directions && tripStart && (
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
         <CircleMarker
           center={[tripStart.lat, tripStart.lng]}
           radius={9}
@@ -656,11 +445,7 @@ export function CityMap({
           </Tooltip>
         </CircleMarker>
       )}
-<<<<<<< HEAD
       {tripEnd && (
-=======
-      {directions && tripEnd && (
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
         <CircleMarker
           center={[tripEnd.lat, tripEnd.lng]}
           radius={10}
@@ -673,7 +458,6 @@ export function CityMap({
       )}
 
       {/* Numbered intermediate stops */}
-<<<<<<< HEAD
       {waypoints.map((w, i) => (
         <CircleMarker
           key={`wp-${i}`}
@@ -686,21 +470,6 @@ export function CityMap({
           </Tooltip>
         </CircleMarker>
       ))}
-=======
-      {directions &&
-        waypoints.map((w, i) => (
-          <CircleMarker
-            key={`wp-${i}`}
-            center={[w.lat, w.lng]}
-            radius={7}
-            pathOptions={{ color: "#f8fafc", fillColor: "#64748b", fillOpacity: 0.95, weight: 2 }}
-          >
-            <Tooltip direction="top" className="font-mono">
-              Stop {i + 1}
-            </Tooltip>
-          </CircleMarker>
-        ))}
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
       {/* POI pins from a category search */}
       {pois.map((p) => (
@@ -717,7 +486,6 @@ export function CityMap({
         </CircleMarker>
       ))}
 
-<<<<<<< HEAD
       {simulationResult?.hotspot && (
         <Circle
           center={[simulationResult.hotspot.lat, simulationResult.hotspot.lng]}
@@ -744,6 +512,22 @@ export function CityMap({
           </CircleMarker>
         </>
       )}
+
+      {/* Other simulated events: impact zone + centre marker */}
+      {otherEvents.map((ev) => (
+        <Fragment key={ev.id}>
+          <Circle
+            center={[ev.lat, ev.lng]}
+            radius={ev.radiusMeters}
+            pathOptions={{ color: "#a78bfa", fillColor: "#a78bfa", fillOpacity: 0.1, weight: 1.5, dashArray: "6 6" }}
+          >
+            <Tooltip sticky>📍 {ev.name} · impact radius {Math.round(ev.radiusMeters)} m</Tooltip>
+          </Circle>
+          <CircleMarker center={[ev.lat, ev.lng]} radius={6} pathOptions={{ color: "#ffffff", fillColor: "#a78bfa", fillOpacity: 1, weight: 2 }}>
+            <Tooltip direction="top" offset={[0, -6]}>{ev.name}</Tooltip>
+          </CircleMarker>
+        </Fragment>
+      ))}
 
       {/* User-placed event pin: 3 concentric impact rings + centre marker */}
       {eventPin && (
@@ -840,8 +624,6 @@ export function CityMap({
         </>
       )}
 
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
       {/* Live position: accuracy halo, snapped point, then the puck */}
       {currentPos && (currentPos.accuracy ?? 0) > 25 && (
         <CircleMarker
@@ -868,7 +650,6 @@ export function CityMap({
           </Tooltip>
         </CircleMarker>
       )}
-<<<<<<< HEAD
       {showStudyArea && (
         <Rectangle
           bounds={[
@@ -889,9 +670,7 @@ export function CityMap({
           </Tooltip>
         </Rectangle>
       )}
-      <CongestionLegend visible={heatmapSegments.length > 0 || simulationResult !== null} />
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
+      <CongestionLegend visible={heatmapSegments.length > 0 || simulationResult !== null} mode={heatMode} />
     </MapContainer>
   )
 }

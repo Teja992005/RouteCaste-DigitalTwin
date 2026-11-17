@@ -10,6 +10,11 @@ type EventSchedulerPanelProps = {
   onEventPin: (pin: { lat: number; lng: number; name: string; radiusMeters: number } | null) => void
   routes: { id: string; label: string; distanceMeters: number; durationSeconds: number; latLngs: [number, number][] }[]
   onSimulationResult: (result: EventSimulationResponse | null) => void
+  /** Called when the user clears this event's simulation (removes it from the combined set). */
+  onClearEvent?: () => void
+  /** Shown above the form: how many events are combined, and the cap. */
+  eventCount?: number
+  maxEvents?: number
 }
 
 const EVENT_TYPES: { id: EventType; label: string }[] = [
@@ -33,7 +38,7 @@ function today() {
   return local.toISOString().slice(0, 10)
 }
 
-export function EventSchedulerPanel({ eventPin, onEventPin, routes, onSimulationResult }: EventSchedulerPanelProps) {
+export function EventSchedulerPanel({ eventPin, onEventPin, routes, onSimulationResult, onClearEvent, eventCount = 0, maxEvents }: EventSchedulerPanelProps) {
   const [eventName, setEventName] = useState("")
   const [eventType, setEventType] = useState<EventType>("festival")
   const [locationName, setLocationName] = useState("")
@@ -125,6 +130,11 @@ export function EventSchedulerPanel({ eventPin, onEventPin, routes, onSimulation
           AI Simulated
         </span>
       </h2>
+      {maxEvents !== undefined && eventCount > 0 && (
+        <p className="mt-1 font-mono text-[9px] text-muted-foreground">
+          {eventCount} of {maxEvents} events simulated — route impact combines all of them.
+        </p>
+      )}
 
       {!eventPin ? (
         <p className="mt-3 font-mono text-[10px] text-muted-foreground">📍 Click “Place Event” then tap the map to choose a location</p>
@@ -235,7 +245,7 @@ export function EventSchedulerPanel({ eventPin, onEventPin, routes, onSimulation
                 {result.forecast.length > 0 && <div className="flex justify-between text-[8px] text-muted-foreground"><span>{result.forecast[0].minutesFromStart} min</span><span>{result.forecast[Math.floor((result.forecast.length - 1) / 2)].minutesFromStart} min</span><span>{result.forecast[result.forecast.length - 1].minutesFromStart} min</span></div>}
               </div>
 
-              <button type="button" onClick={() => { setResult(null); onSimulationResult(null) }} className="w-full rounded-lg border border-border bg-card px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground">× Clear Simulation</button>
+              <button type="button" onClick={() => { setResult(null); onSimulationResult(null); onClearEvent?.() }} className="w-full rounded-lg border border-border bg-card px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground">× Clear This Event</button>
             </div>
           )}
         </div>

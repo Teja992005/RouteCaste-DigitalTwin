@@ -1,6 +1,6 @@
 # RouteCast — Event Route Digital Twin & AI Traffic Simulator
 
-> A full-stack route-intelligence platform for event logistics, point-to-point navigation, traffic simulation, weather-aware route scoring, incident analysis, and 2D/3D visualization.
+> An AI-powered digital twin of Guntur City for event traffic: place a scheduled event on the map and RouteCast predicts, with trained ONNX models, how it slows the surrounding roads and which route to take.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black?logo=nextdotjs)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -8,56 +8,45 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Leaflet](https://img.shields.io/badge/Leaflet-1.9-199900?logo=leaflet&logoColor=white)](https://leafletjs.com/)
 [![OpenStreetMap](https://img.shields.io/badge/OpenStreetMap-enabled-7EBC6F?logo=openstreetmap&logoColor=white)](https://www.openstreetmap.org/)
-[![Three.js](https://img.shields.io/badge/Three.js-0.185-black?logo=threedotjs)](https://threejs.org/)
 [![ONNX Runtime](https://img.shields.io/badge/ONNX_Runtime-optional-005CED?logo=onnx)](https://onnxruntime.ai/)
 
 ---
 
 ## Overview
 
-**RouteCast** is a browser-based capstone/research prototype that extends ordinary navigation with route intelligence, scenario simulation, event-level route planning, weather and incident context, optional machine-learning inference, route progress tracking, and 2D/3D visualizations.
+**RouteCast** is a capstone/research prototype that simulates how a scheduled event loads a city's roads. Pick a route on a real map of Guntur, place one to three events (type, time window, expected attendance), and RouteCast predicts each route's travel time and congestion with and without the events, then recommends the least affected route.
 
-The application supports two major routing experiences:
+The application has two experiences:
 
-- **Event Mode** — multiple invitees travel from different origins to a common venue using a deterministic synthetic city graph.
-- **Directions Mode** — users select real-world origins, destinations, optional waypoints, and travel modes, then receive routes from OSRM using OpenStreetMap data.
+- **Event mode** — simulate events and see their route impact: per-route baseline vs event ETA, a per-road congestion heatmap, a reachable-area (isochrone) view, an emergency-access check, a what-if road closure, and a time slider that re-runs everything for any hour of the day.
+- **Directions mode** — point-to-point routes from OSRM (OpenStreetMap data), scored with weather, incidents and closures.
 
-Unlike a conventional mapping application that focuses mainly on shortest/fastest path selection, RouteCast compares routes using predicted ETA, congestion, incident effects, weather impact, risk, relative route performance, and scenario changes.
+Route ETA and congestion are predicted by two trained neural networks run through ONNX Runtime. If a model cannot be loaded the app falls back to a heuristic and **says so on screen**: every result carries its source (ONNX model, heuristic, OSRM free-flow, estimate).
 
-> **Project status:** Functional research/capstone prototype.  
-> It contains real geocoding, routing, weather, POI lookup, interactive navigation behavior, simulation, and visualization, but it is **not** a production-grade live-traffic navigation platform.
+> **Project status:** Functional research/capstone prototype.
+> The models are trained on **synthetic** data from our own generator and have not been validated against observed Guntur traffic. Treat the output as a simulation, not a measurement or a live-traffic product.
 
 ---
 
 ## Purpose
 
-RouteCast was built to demonstrate how route planning can evolve beyond simple shortest-path navigation by combining:
+RouteCast was built to show that event traffic can be planned for, not just reacted to, by combining:
 
-- geospatial routing,
-- graph optimization,
-- traffic and incident simulation,
-- weather-aware scoring,
-- route comparison,
-- browser geolocation,
-- optional AI/ML inference,
-- smart-city style analytics,
-- and interactive 2D/3D visualization.
+- geospatial routing on real roads,
+- trained ETA and congestion models,
+- an event demand model (type, attendance, time window, distance from the venue),
+- explicit provenance for every number,
+- and interactive map visualization.
 
 ### Potential use cases
 
-The current implementation is suitable for exploratory or academic scenarios such as:
+- event and venue access planning (festivals, matches, rallies),
+- choosing a time slot or attendance level before committing,
+- road-closure impact analysis near a venue,
+- emergency-access checks through an event zone,
+- urban mobility research and teaching.
 
-- event and venue access planning,
-- conference/festival transportation planning,
-- route-risk comparison,
-- delivery-route comparison prototypes,
-- emergency-response scenario demonstrations,
-- road-closure impact analysis,
-- smart-city demonstrations,
-- urban mobility research,
-- weather-aware route decision support.
-
-It is **not** currently a certified emergency-routing, fleet-management, or production dispatch system.
+It is **not** a certified emergency-routing, traffic-control or production dispatch system.
 
 ---
 
@@ -65,37 +54,26 @@ It is **not** currently a certified emergency-routing, fleet-management, or prod
 
 | Feature | Status | Description |
 |---|---|---|
-| Interactive Leaflet map | Implemented | Pan, zoom, route layers, incidents, POIs, GPS position, route progress |
-| OpenStreetMap integration | Implemented | OSM tiles/services used for mapping, geocoding, POIs, and routing |
-| Forward geocoding | Implemented | Nominatim-based text search |
-| Reverse geocoding | Implemented | Converts selected coordinates into readable places |
-| Browser geolocation | Implemented | One-time location lookup and continuous watch |
-| Event-mode routing | Implemented / simulated graph | Multi-invitee routes to one venue using a synthetic 8×8 city graph |
-| Directions routing | Implemented | Real OSRM routing for point-to-point travel |
-| Route alternatives | Implemented | Displays alternatives when the provider returns them |
-| Driving / walking / cycling | Implemented | OSRM-backed; public-server profile limitations may trigger estimated timing fallback |
-| Route visualization | Implemented | Active and alternative routes rendered on the map |
+| Event simulation | Implemented | Event type, time window and attendance produce per-route baseline vs event ETA and congestion, using the ONNX models |
+| Multiple events | Implemented | Up to 3 events combined; routes are scored against all of them (an extrapolation beyond single-event training, flagged in the response) |
+| Traffic time slider | Implemented | Re-runs predictions for any hour; an event only loads the roads while it is running, peaking at its midpoint |
+| Congestion heatmap | Implemented | Per-road congestion around each venue from the real Guntur OpenStreetMap road graph: event vehicles are routed from five city zones to the venue over directed roads and combined with the baseline using BPR travel times (Overpass estimate outside Guntur) |
+| Offline fallbacks | Implemented | If OSRM, Nominatim or Overpass fail: one retry, then the local Guntur road graph (routes, free-flow) and landmark list (search, reverse geocode, hospitals/education/government/attractions/shopping). Responses are labelled |
+| Reachability (isochrone) | Implemented | How far you can travel in a set time, with and without the event |
+| Emergency access check | Implemented | Emergency route through the impact zone with a delay and recommendation |
+| Organizer plan | Implemented | Staggered-arrival waves, diversion routes and marshalling points for an event, tested on the Guntur graph with before/after numbers from the same BPR model (`/api/event/plan`, Organizer Plan panel, map overlay) |
+| Event re-route comparison | API | `/api/guntur` compares the normal free-flow route with the best route under an event's load on the Guntur graph |
+| What-if closure | Implemented | Test a road closure and see whether it collides with the event's impact zone |
+| Route metrics | Implemented | Selected-route speed, congestion, arrival and event delay (ONNX output once an event is simulated, OSRM free-flow otherwise); ambient AQI from Copernicus CAMS via Open-Meteo (does not react to events); CO₂ and fuel as labelled estimates; incidents from route intel. Every card shows its source |
+| Directions routing | Implemented | Real OSRM routing for driving, walking and cycling, with alternatives and turn steps |
+| Route intelligence | Implemented | Comparative 0–100 score from predicted congestion, incidents, weather and risk |
 | Navigation session | Prototype | GPS tracking, progress, off-route detection, rerouting, follow-camera |
-| Turn instructions | Implemented | Generated from OSRM maneuver metadata |
-| Predicted congestion | Implemented | Deterministic heuristic or optional ONNX output |
-| Incident intelligence | Implemented | Reported and simulated incidents matched spatially to routes |
-| Weather intelligence | Implemented | Open-Meteo route-corridor enrichment |
-| Nearby POIs | Implemented | Overpass API with Nominatim fallback |
-| Route scoring | Implemented | 0–100 comparative route score |
-| Route recommendation | Implemented | Highest-scoring route is recommended with explanation |
-| Dijkstra optimization | Implemented | Used for the synthetic event graph |
-| Scenario simulation | Implemented | Closure, accident, surge, weather/rain/flood scenarios |
-| Metrics dashboard | Implemented / derived | Congestion, speed, AQI, emergency response, CO₂, fuel, incidents |
-| Congestion forecast | Implemented | Six-step forecast with heuristic or optional ONNX prediction |
-| Map layer controls | Implemented | Traffic, incidents, pollution, closures, basemap selection |
-| 2D hologram | Implemented | Abstract normalized route/network visualization |
-| 3D hologram | Implemented | Three.js / React Three Fiber abstract route scene |
-| ONNX inference | Optional | ETA and congestion model support |
-| ML training pipeline | Implemented | PyTorch synthetic-data training and ONNX export |
-| Capstone presentation | Implemented | Browser presentation route and generated PowerPoint deck |
+| Geocoding and POIs | Implemented | Nominatim search and reverse geocoding; Overpass nearby places |
+| Model provenance | Implemented | Results are badged model or heuristic; approximated inputs are listed in the response note |
+| ML training pipeline | Implemented | PyTorch training on a synthetic dataset and ONNX export (`ml/`) |
+| Capstone presentation | Implemented | Browser deck at `/presentation` and a generated PowerPoint |
 | Database | Not implemented | No persistent database |
 | Authentication | Not implemented | No login or multi-user authorization |
-| Persistent incident storage | Not implemented | Incidents are stored in process memory only |
 | Live commercial traffic | Not implemented | Traffic is predicted/simulated rather than observed |
 
 ---
@@ -104,23 +82,21 @@ It is **not** currently a certified emergency-routing, fleet-management, or prod
 
 ### Event Mode
 
-1. The application generates a deterministic **8×8 synthetic city graph**.
-2. A venue and multiple invitee origins are represented on that graph.
-3. The user adjusts routing priorities such as:
-   - time,
-   - distance,
-   - congestion.
-4. RouteCast uses **Dijkstra's algorithm** to produce routes.
-5. Users can apply scenarios such as:
-   - road closure,
-   - accident,
-   - traffic surge,
-   - severe weather.
-6. The graph state and derived metrics change in response.
-7. Results can be viewed in:
-   - Map,
-   - 2D Hologram,
-   - 3D Hologram.
+1. Choose a route (A to B) on the map of Guntur.
+2. Click **Place Event** and tap the map, or pick a known place, then set the event type, date, time window and expected attendance, and press **Simulate Traffic Impact**.
+3. The server builds model inputs that reproduce the training-time feature formulas and predicts every route **twice** with the same models: normal traffic at the evaluated hour (baseline) and the same hour with the event's proximity, severity and load. The delay is the difference.
+4. Routes are ranked by predicted event-time ETA and the least affected one is recommended.
+5. Add up to two more events: congestion boosts add up per route, and only events that actually reach a route affect it.
+6. Drag the **Traffic Time** slider to re-run the predictions for any hour. Before and after an event's window it contributes nothing.
+7. Inspect the result in the route table, Impact Dashboard, congestion heatmap, isochrone, emergency and what-if panels.
+
+How the event changes congestion for a route:
+
+```text
+congestion = base(hour, day) + Σ boost(event type) × reach(distance to venue) × phase(time)
+```
+
+`reach` is 1 at the venue and falls to 0 at the impact radius (200 m + 5.8 m × √attendance, capped at 1.5 km, the largest radius in the training data). `phase` is 0 outside the event window and 1 at its midpoint.
 
 ### Directions Mode
 
@@ -147,38 +123,34 @@ flowchart TD
     A[User / Browser] --> B[Next.js 16 + React 19 UI]
 
     B --> C1[Leaflet Map]
-    B --> C2[2D Hologram]
-    B --> C3[Three.js / React Three Fiber]
-    B --> C4[SWR Data Fetching]
-    B --> C5[Browser Geolocation API]
+    B --> C2[SWR Data Fetching]
+    B --> C3[Browser Geolocation API]
 
-    C4 --> D[Next.js Route Handlers]
+    C2 --> D[Next.js Route Handlers]
 
-    D --> E1[Geocoding API]
-    D --> E2[Navigation API]
-    D --> E3[Route Intelligence API]
-    D --> E4[Incident API]
-    D --> E5[POI API]
-    D --> E6[Event Planning API]
+    D --> E1[Event Simulation API]
+    D --> E2[Heatmap / Isochrone / Emergency APIs]
+    D --> E3[Navigation API]
+    D --> E4[Route Intelligence API]
+    D --> E5[Geocode / Places / Incidents APIs]
+    D --> E6[Air Quality API]
 
-    E1 --> F1[Nominatim]
-    E2 --> F2[OSRM]
-    E3 --> F2
-    E3 --> F3[Open-Meteo]
-    E3 --> F4[Incident Store]
-    E3 --> F5[ONNX Runtime]
-    E5 --> F6[Overpass API]
-    E5 --> F1
-
-    E6 --> G1[Synthetic 8x8 City Graph]
-    G1 --> G2[Dijkstra Optimizer]
-    G2 --> G3[Simulation + Metrics]
+    E1 --> G1[Event input builder]
+    G1 --> F5[ONNX Runtime]
+    E3 --> F2[OSRM]
+    E4 --> F2
+    E4 --> F3[Open-Meteo]
+    E4 --> G1
+    E2 --> F6[Overpass API]
+    E5 --> F1[Nominatim]
+    E5 --> F6
+    E6 --> F7[Open-Meteo / Copernicus CAMS]
 
     F5 --> H1[ETA Model]
     F5 --> H2[Congestion Model]
 
-    H1 -. fallback .-> H3[Deterministic Heuristics]
-    H2 -. fallback .-> H3
+    H1 -. fallback, labelled .-> H3[Heuristics]
+    H2 -. fallback, labelled .-> H3
 ```
 
 ---
@@ -198,9 +170,6 @@ flowchart TD
 | Lucide React | ^1.16.0 | Icons |
 | Leaflet | ^1.9.4 | Interactive mapping |
 | React Leaflet | ^5.0.0 | React bindings for Leaflet |
-| Three.js | ^0.185.1 | 3D rendering |
-| React Three Fiber | ^9.7.0 | React renderer for Three.js |
-| React Three Drei | ^10.7.7 | 3D helpers and controls |
 | SWR | ^2.5.0 | Client-side fetching and caching |
 | ONNX Runtime Node | ^1.27.0 | Optional ML inference |
 | Vercel Analytics | 1.6.1 | Production analytics |
@@ -285,89 +254,74 @@ The project can use map layers from:
 RouteCaste/
 ├── app/
 │   ├── api/
+│   │   ├── air-quality/route.ts
+│   │   ├── emergency/route.ts
+│   │   ├── event/plan/route.ts
+│   │   ├── event/simulate/route.ts
 │   │   ├── geocode/route.ts
+│   │   ├── guntur/route.ts
+│   │   ├── heatmap/route.ts
 │   │   ├── incidents/route.ts
 │   │   ├── intelligence/route/route.ts
+│   │   ├── isochrone/route.ts
 │   │   ├── navigation/route/route.ts
-│   │   ├── places/nearby/route.ts
-│   │   └── plan/route.ts
-│   ├── presentation/
-│   │   └── page.tsx
+│   │   └── places/nearby/route.ts
+│   ├── presentation/page.tsx
 │   ├── globals.css
 │   ├── layout.tsx
 │   └── page.tsx
 │
 ├── components/
 │   ├── city-map.tsx
-│   ├── comparison-table.tsx
-│   ├── control-panel.tsx
-│   ├── forecast-strip.tsx
-│   ├── hologram-2d.tsx
-│   ├── hologram-3d.tsx
+│   ├── emergency-panel.tsx
+│   ├── event-scheduler-panel.tsx
+│   ├── impact-dashboard.tsx
+│   ├── isochrone-panel.tsx
 │   ├── layer-controls.tsx
 │   ├── location-search.tsx
 │   ├── metrics-dashboard.tsx
+│   ├── organizer-plan-panel.tsx
 │   ├── nav-hud.tsx
 │   ├── navigation-panel.tsx
 │   ├── poi-panel.tsx
 │   ├── route-intel-panel.tsx
-│   ├── scenario-panel.tsx
+│   ├── time-slider.tsx
 │   ├── whatif-panel.tsx
-│   ├── presentation/
-│   │   ├── slide-deck.tsx
-│   │   └── slides.tsx
-│   └── ui/
-│       └── button.tsx
+│   └── presentation/
+│       ├── slide-deck.tsx
+│       └── slides.tsx
 │
 ├── hooks/
-│   ├── use-area-names.ts
 │   ├── use-geolocation.ts
 │   ├── use-nav-session.ts
 │   ├── use-navigation-route.ts
 │   └── use-route-intel.ts
 │
 ├── lib/
-│   ├── city.ts
-│   ├── ml.ts
-│   ├── optimizer.ts
-│   ├── sim.ts
-│   ├── store.ts
+│   ├── air-quality.ts          # ambient AQI client (Open-Meteo / CAMS)
+│   ├── event-model-inputs.ts   # training-compatible model inputs, event phase, multi-event
+│   ├── guntur-graph.ts         # Guntur OSM road graph: demand routing, BPR, offline routes
+│   ├── guntur-plan.ts          # organizer plan: waves, diversions, marshalling points
+│   ├── guntur.ts               # service layer for /api/guntur
+│   ├── guntur-places.ts
+│   ├── ml.ts                   # ONNX loading and inference
+│   ├── ml-contracts.ts         # model input contracts
+│   ├── route-metrics.ts        # per-route metrics with source tags
 │   ├── types.ts
-│   ├── utils.ts
-│   ├── geo/
-│   │   ├── geocoder.ts
-│   │   ├── places.ts
-│   │   └── routing.ts
-│   ├── intel/
-│   │   ├── incidents.ts
-│   │   ├── score.ts
-│   │   └── weather.ts
-│   └── nav/
-│       └── progress.ts
+│   ├── geo/ (geocoder, places, routing, offline fallbacks)
+│   ├── intel/ (incidents, score, weather)
+│   └── nav/progress.ts
 │
-├── ml/
-│   ├── README.md
-│   ├── data.py
-│   ├── requirements.txt
-│   ├── schema.py
-│   └── train.py
-│
-├── models/
-│   └── README.md
-│
-├── public/
-│   ├── RouteCast-Capstone-Deck.pptx
-│   └── ...
-│
-├── scripts/
-│   └── generate-deck.mjs
-│
+├── ml/                          # PyTorch training pipeline (data, schema, train)
+├── models/                      # eta.onnx, congestion.onnx, metrics.json
+├── tests/                       # Vitest: ML, event inputs, route metrics, Guntur graph, fallbacks
+├── data/processed/              # Guntur roads, nodes, zones, events (OpenStreetMap-derived)
+├── scripts/                     # dataset generation and deck generator
+├── docs/                        # model card, dataset methodology
+├── public/RouteCast-Capstone-Deck.pptx
 ├── .env.example
-├── .gitignore
 ├── next.config.mjs
 ├── package.json
-├── pnpm-lock.yaml
-├── postcss.config.mjs
 └── tsconfig.json
 ```
 
@@ -397,36 +351,59 @@ The same endpoint also supports reverse-geocoding parameters using latitude and 
 
 ---
 
-### `GET /api/plan`
+### `POST /api/event/simulate`
 
-Plans routes using the deterministic local city graph.
+Simulates one or more events and scores routes against them.
 
-Important parameters include:
-
-```text
-mode=event|directions
-wTime
-wDistance
-wCongestion
-scenario=none|closure|accident|surge|weather
-intensity
-density
-lat
-lng
+```json
+{
+  "events": [
+    { "name": "Sankranthi Festival", "type": "festival", "lat": 16.3067, "lng": 80.4365,
+      "locationName": "Guntur Bus Stand", "startTime": "2026-11-20T17:00:00",
+      "endTime": "2026-11-20T21:00:00", "attendance": 5000 }
+  ],
+  "routes": [
+    { "id": "r1", "label": "Route 1", "distanceMeters": 5000, "durationSeconds": 600,
+      "samplePoints": [{ "lat": 16.29, "lng": 80.43 }] }
+  ],
+  "hourOverride": 18.5
+}
 ```
 
-It can return:
+- `events` takes 1 to 3 events (a single `event` object is also accepted). `routes` and `hourOverride` are optional; `hourOverride` is a decimal hour of day that evaluates each event at its phase at that hour.
+- Event types: `festival`, `sports`, `concert`, `protest`, `construction`, `vip_visit`, `public_gathering`, `other`.
+- The response has `event` and `events`, per-route `baseEtaMin`, `eventEtaMin`, `etaDeltaMin`, `congestionBefore`, `congestionDuring`, `congestionClass`, `affectedBy` and `recommended`, a parametric `forecast`, a `hotspot`, an `evaluation` (hour and event phase), and `source`.
+- `source` is `"model"` only if every prediction for every route came from an ONNX model; otherwise `"heuristic"`. The `note` lists approximated inputs and, for several events, that the combination is an extrapolation.
 
-- graph data,
-- event/invitee routes,
-- alternatives,
-- metrics,
-- baseline metrics,
-- incidents,
-- pollution zones,
-- forecast values,
-- model status,
-- rerouting information.
+### `POST /api/heatmap`
+
+Per-road congestion segments around an event. Body: `lat`, `lng`, `impactRadiusMeters`, `eventLoad`, optional `attendance`, `eventPhase` (0..1) and `hourOverride`.
+
+With `attendance` and a venue inside Guntur, segments come from the local road graph (`source: "guntur-graph"`): zone demand is routed to the venue over directed roads, added to the hour-of-day baseline, and congestion is volume/capacity. Otherwise it falls back to an Overpass-based estimate (`source: "overpass-estimate"`).
+
+### `POST /api/isochrone`
+
+Reachable area from an origin within `timeLimitMinutes` (1 to 30), optionally reduced by an event (`eventLat`, `eventLng`, `eventLoad`).
+
+### `POST /api/emergency`
+
+Emergency route from an origin to a destination, with its delay and a pre-positioning recommendation when an event is supplied.
+
+### `POST /api/event/plan`
+
+Body: `lat`, `lng`, `attendance`, `startTime` (ISO). Returns `plan`: `options` (1 to 4 arrival waves with peak vehicles, overloaded roads and lost vehicle-hours), `recommendedWaves` and its reason, `diversions` (per city zone, with geometry), `marshalPoints` (about 1.2 km before the venue on each approach), `before` / `wavesOnly` / `after` metrics and `assumptions`. Evaluated at the busiest arrival hour (one hour before the start) within 2.5 km of the venue. Diversions are timed under the staggered load and kept only if re-running the model shows they cut total delay. Returns 422 outside the Guntur graph.
+
+### `GET /api/guntur`
+
+Dataset status, events and zones. With `route=1&eventId=..&timestamp=ISO&fromLat=..&fromLon=..&toLat=..&toLon=..` it returns the normal free-flow route and the best route under that event's load at that time, both timed with the same BPR model (`normal`, `rerouted`, `savedSec`, `samePath`). Both points must be within 1.5 km of the graph.
+
+### Fallback labels
+
+`/api/navigation/route` and `/api/intelligence/route` return `degraded` (null normally) when live routing failed and the offline Guntur route was used. `/api/geocode` and `/api/places/nearby` return `source: "local-guntur"` when answered from the local landmark list.
+
+### `GET /api/air-quality?lat=..&lng=..`
+
+Ambient US AQI from the Copernicus CAMS model via Open-Meteo. Returns `{ "aqi": null }` when the feed is unavailable. Regional background data; it does not react to simulated events.
 
 ---
 
@@ -689,61 +666,51 @@ The highest-scoring route becomes the recommendation.
 
 ## Machine Learning
 
-Machine learning is **optional**.
-
-The application supports two ONNX models:
+RouteCast ships two trained models in `models/`:
 
 ```text
-models/eta.onnx
-models/congestion.onnx
+models/eta.onnx          (+ eta.onnx.data)
+models/congestion.onnx   (+ congestion.onnx.data)
 ```
 
-If these model files are missing or inference fails, RouteCast automatically falls back to deterministic heuristics.
+If a model file is missing or inference fails, RouteCast falls back to deterministic heuristics and labels the result `heuristic`.
 
 ### ETA Model
 
-Expected input includes nine normalized features such as:
-
-- distance,
-- average congestion,
-- number of segments,
-- hour sine/cosine,
-- weekend indicator,
-- area density,
-- scenario severity,
-- rain.
+Nine features (see `ml/schema.py`): distance, current travel time (log), current congestion, normalized speed, hour sine and cosine, event proximity, scenario severity and event load. The output is the log of the ratio of future to current travel time, decoded as `currentTravelTime × exp(output)`.
 
 ### Congestion Model
 
-Expected features include:
-
-- current congestion,
-- forecast step,
-- hour sine/cosine,
-- incident load,
-- weekend indicator,
-- area density,
-- scenario severity,
-- rain.
+Nine features: current congestion, forecast step, normalized speed, road capacity, hour sine and cosine, incident load, scenario severity and event proximity. Five classes: free, light, moderate, heavy, severe.
 
 ### Tensor contract
 
 ```text
 Input name:  input
 Input type:  float32
-Input shape: [batch, N]
+Input shape: [batch, 9]
 
 Output name: output
-Output shape: [batch, 1]
 ```
+
+### Reported metrics (held-out synthetic data)
+
+| Model | Metric | Value |
+|---|---|---:|
+| ETA | R² | 0.942 |
+| Congestion | Exact accuracy | 0.800 |
+| Congestion | Within one class | ~1.000 |
+| Congestion | Macro-F1 | 0.806 |
+
+These are measured on held-out data from our own synthetic generator (`scripts/generate_synthetic_dataset.py`), not on observed traffic. They show the networks learned the simulator.
+
+### How inputs are built
+
+`lib/event-model-inputs.ts` reproduces the training-time feature formulas (for example the congestion feature is 0.85 × c², and event proximity and load follow `ml/data.py`). Two inputs are approximated for OSRM routes, which carry no road-level data: current congestion comes from the training data's hour-of-day profile, and road capacity uses the training mean. The API response lists them.
 
 ### Training Pipeline
 
-The `ml/` directory contains a PyTorch-based training workflow.
-
-By default it can train feed-forward MLP regressors using synthetic data and export ONNX models.
-
-Training generates:
+The `ml/` directory contains a PyTorch workflow that trains feed-forward MLPs on the synthetic dataset and exports ONNX:
 
 ```text
 models/eta.onnx
@@ -751,7 +718,7 @@ models/congestion.onnx
 models/metrics.json
 ```
 
-The current project should be described as **ML-ready**, not as a production-trained traffic prediction system, because the training data is synthetic and production model artifacts are not bundled.
+The project should be described as a **proof of concept**, not a validated traffic predictor: the training data is synthetic and has not been calibrated against observed Guntur traffic.
 
 ---
 
@@ -759,14 +726,7 @@ The current project should be described as **ML-ready**, not as a production-tra
 
 ### Event Mode
 
-Supported scenarios:
-
-- closure,
-- accident,
-- traffic surge,
-- weather.
-
-The local graph is cloned before mutation so the cached baseline graph is not permanently modified.
+The event simulator (see *How RouteCast Works*) compares each route under normal traffic against the same hour with the event running. Events do not slow routes that they do not reach, and an event only contributes while it is running.
 
 ### Real-Route Intelligence
 
@@ -778,45 +738,7 @@ Supported scenarios:
 - heavy rain,
 - flood.
 
-For blockage scenarios, RouteCast can request genuine OSRM detours using offset waypoints.
-
-The detour geometry is therefore generated by the real routing engine, while the incident/blockage itself remains simulated.
-
----
-
-## 2D and 3D Visualization
-
-### 2D Hologram
-
-The 2D mode renders a normalized representation of:
-
-- synthetic graph,
-- routes,
-- venue,
-- invitees,
-- traffic conditions.
-
-It is an explanatory visualization rather than a geographic map.
-
-### 3D Hologram
-
-Built with:
-
-- Three.js,
-- React Three Fiber,
-- React Three Drei.
-
-It visualizes:
-
-- normalized route geometry,
-- grid,
-- elevated routes,
-- venue markers,
-- origins,
-- POIs,
-- incident effects.
-
-> The 3D view is an abstract route/network visualization. It is **not** a full 3D city digital twin with real buildings, terrain, and city meshes.
+For blockage scenarios, RouteCast can request genuine OSRM detours using offset waypoints. The detour geometry is generated by the real routing engine, while the incident/blockage itself remains simulated. Scores in this mode are heuristic by design, because the models were not trained on closure or flood scenarios.
 
 ---
 
@@ -1019,24 +941,14 @@ Route intelligence can compare:
 
 Manual map interaction can also be used for demonstrations when GPS is unavailable.
 
-### Run a Scenario
+### Simulate an Event
 
-Apply a scenario such as:
-
-- closure,
-- accident,
-- traffic surge,
-- heavy rain,
-- flood.
-
-Then compare:
-
-- baseline route,
-- scenario route,
-- congestion,
-- predicted ETA,
-- incidents,
-- derived city metrics.
+1. Pick an origin and destination to get routes.
+2. Click **Place Event**, tap the map (or choose a place), then set the type, time window and attendance and press **Simulate Traffic Impact**.
+3. Read the route table and Impact Dashboard: baseline vs event ETA, congestion class and delay per route, with the recommended route starred.
+4. Add up to two more events to see them combine, and remove one with the × on its chip.
+5. Drag the **Traffic Time** slider to see the same events at another hour.
+6. Use the heatmap, isochrone, emergency and what-if panels to inspect the impact zone.
 
 ### Explore Nearby POIs
 
@@ -1052,51 +964,38 @@ Choose categories such as:
 
 POIs can be inspected and used as route stops or destinations.
 
-### Switch Visualization Mode
-
-Use:
-
-- Map,
-- 2D Holo,
-- 3D Holo.
-
----
-
 ## Advantages
 
-- Uses an open geospatial stack.
-- Default setup requires no commercial mapping API key.
-- Supports real-world routing and geocoding.
-- Combines navigation with route intelligence.
-- Includes event-level multi-traveler planning.
-- Includes incident and weather-aware analysis.
-- Supports configurable routing priorities.
-- Provides deterministic simulation for repeatable demonstrations.
-- Supports optional ONNX inference.
-- Continues to work using heuristic fallback when ML models are unavailable.
-- Includes map, 2D, 3D, and presentation views.
+- Uses an open geospatial stack; no commercial mapping API key is needed.
+- Predicts event impact with trained models and compares like with like (same model for baseline and event).
+- Labels every result with its source, and falls back to heuristics without breaking when a model is unavailable.
+- Handles several overlapping events and any time of day.
+- Combines event simulation with real-world routing, weather and incident context.
+- Has unit tests for the feature encoders, decoders, event-input builder and route metrics.
 - Can be self-hosted as a Next.js application.
-- Provides a strong full-stack/geospatial/AI capstone demonstration.
 
 ---
 
 ## Current Limitations
 
+- The ETA and congestion models are trained on **synthetic** data and are not validated against observed Guntur traffic.
+- For OSRM routes, current congestion and road capacity are approximated (listed in each response).
+- The models were trained on single events; combining several events is an extrapolation.
+- Directions-mode scoring (closures, accidents, floods) is heuristic.
+- The congestion forecast curve and hotspot in the event response are parametric, not model output.
+- CO₂ and fuel are fixed per-km estimates scaled by congestion.
+- The offline route fallback is free-flow on the local Guntur graph, covers Guntur only and has no turn-by-turn maneuvers; the landmark fallback is a short curated list.
+- The organizer plan covers one event (the strongest) and Guntur venues only; marshalling points are suggested positions, not surveyed sites.
+- Isochrone, emergency and what-if checks take one event (the one loading the roads most at the chosen time) when several are simulated.
 - No live commercial traffic feed.
-- Event-mode road network is synthetic.
-- Many metrics and forecasts are heuristic/derived by default.
-- ML training data is synthetic.
-- ONNX model artifacts are optional and not bundled.
 - Incidents are stored only in process memory.
 - No database or PostGIS integration.
 - No authentication or user accounts.
-- No persistent analytics/history.
-- Public Nominatim, OSRM, Overpass, and tile providers may rate-limit requests.
+- Public Nominatim, OSRM, Overpass and tile providers may rate-limit requests.
 - Browser geolocation requires user permission.
 - Public OSRM walking/cycling support may be limited.
-- The 3D view is abstract, not a full 3D city representation.
-- No automated test suite is currently configured.
-- No application-level rate limiting is currently implemented.
+- Automated tests cover the ML encoders/decoders, event-input builder and route metrics; there are no end-to-end or UI tests.
+- No application-level rate limiting is implemented.
 - Native `onnxruntime-node` deployment may require environment-specific handling.
 
 ---
@@ -1127,7 +1026,7 @@ Before production use, the project should add:
 
 ## Performance & Scalability
 
-The current event graph contains only 64 nodes, so the local Dijkstra implementation is intentionally simple and appropriate for a capstone-sized simulation.
+Event simulation runs two small MLP inferences per route per request, so the compute cost is negligible; latency is dominated by the public routing, Overpass and weather APIs.
 
 Potential bottlenecks include:
 
@@ -1135,14 +1034,12 @@ Potential bottlenecks include:
 - Overpass query performance,
 - repeated weather/routing requests,
 - large Leaflet overlay counts,
-- Three.js rendering on low-end devices,
 - process-local state across multiple server instances.
 
 For larger-scale production use, consider:
 
 - Redis/server-side response caching,
 - PostgreSQL + PostGIS,
-- A* or bidirectional Dijkstra,
 - self-hosted OSRM/Nominatim/Overpass,
 - shared incident storage,
 - WebSocket or SSE updates,
@@ -1220,7 +1117,7 @@ Generated deck:
 public/RouteCast-Capstone-Deck.pptx
 ```
 
-The presentation covers project overview, problem statement, architecture, ML, simulation, visualization, and technology stack.
+The presentation covers the problem, the event-simulation method, architecture, the ML models and their (synthetic-data) metrics, reliability and honesty, the technology stack, limits and future work.
 
 ---
 
@@ -1277,16 +1174,13 @@ RouteCast demonstrates experience with:
 - geocoding,
 - routing,
 - route geometry,
-- graph algorithms,
-- Dijkstra optimization,
+- traffic modelling and event-demand simulation,
 - geospatial distance calculations,
 - spatial incident matching,
 - scenario simulation,
 - route scoring,
 - SWR data fetching,
 - Leaflet,
-- Three.js,
-- React Three Fiber,
 - ONNX Runtime,
 - PyTorch,
 - synthetic ML training data,
@@ -1302,11 +1196,9 @@ For a stronger GitHub presentation, add screenshots of:
 1. Main RouteCast map/dashboard
 2. Directions mode with route alternatives
 3. Route intelligence panel
-4. Closure/accident scenario simulation
-5. Metrics dashboard and congestion forecast
-6. 2D hologram
-7. 3D hologram
-8. Presentation page
+4. Event simulation with the Impact Dashboard and Traffic Time slider
+5. Congestion heatmap and route metrics
+6. Presentation page
 
 Suggested folder:
 
@@ -1361,26 +1253,39 @@ weather-api
 RouteCast is more than a static UI demo because it includes:
 
 - working Next.js APIs,
-- real geocoding,
-- real route generation,
-- real weather enrichment,
-- real nearby-place lookup,
-- navigation-session logic,
-- rerouting,
-- scenario simulation,
-- optional ONNX inference,
-- interactive 2D/3D visualization.
+- trained ONNX models running live in the event simulator,
+- real geocoding, route generation and weather enrichment,
+- navigation-session logic and rerouting,
+- multi-event simulation with a time slider,
+- unit tests for the ML input/output code.
 
 It should not yet be described as production-ready because it does not currently include:
 
 - authentication,
 - durable persistence,
 - live traffic,
-- production-trained ML models,
+- models validated against observed traffic,
 - rate limiting,
-- automated testing,
+- end-to-end testing,
 - shared multi-instance state,
 - full production observability.
+
+---
+
+## Guntur dataset-driven event routing
+
+RouteCast now includes a connected Guntur, Andhra Pradesh pipeline. It downloads a real directed OpenStreetMap drive graph, exports source-preserving roads/nodes, creates clearly labelled modeled baseline traffic, assigns event vehicles over real graph paths, computes BPR dynamic edge weights, and exposes normal/event-aware Dijkstra, A*, and bidirectional comparisons at `/api/guntur` and in the dashboard's **Guntur event routing** panel. The original 8×8 graph is still available as a fallback/demo mode.
+
+```powershell
+python scripts/build_guntur_dataset.py
+python scripts/train_traffic_model.py
+python -m unittest discover -s tests -v
+pnpm dev
+```
+
+At runtime the app does not need the pre-built per-timestamp shards: `lib/guntur-graph.ts` loads `guntur_roads.csv`, `guntur_nodes.csv` and `zones.csv` and computes event traffic on demand with the same BPR rule.
+
+See [the methodology](docs/GUNTUR_DATASET_METHODOLOGY.md), [model card](docs/MODEL_CARD.md), and [runbook](docs/GUNTUR_PIPELINE_RUNBOOK.md). **All baseline, event-demand, and travel-time values are modeled—not measured Guntur road-sensor data.** OSM geometry/identifiers retain OpenStreetMap attribution and ODbL obligations.
 
 ---
 
@@ -1394,22 +1299,6 @@ https://github.com/Dark-Matter007/RouteCaste
 
 ## Disclaimer
 
-<<<<<<< HEAD
-=======
-## Guntur dataset-driven event routing
-
-RouteCast now includes a connected Guntur, Andhra Pradesh pipeline. It downloads a real directed OpenStreetMap drive graph, exports source-preserving roads/nodes, creates clearly labelled modeled baseline traffic, assigns event vehicles over real graph paths, computes BPR dynamic edge weights, and exposes normal/event-aware Dijkstra, A*, and bidirectional comparisons at `/api/guntur` and in the dashboard's **Guntur event routing** panel. The original 8×8 graph is still available as a fallback/demo mode.
-
-```powershell
-python scripts/build_guntur_dataset.py
-python scripts/train_traffic_model.py
-python -m unittest discover -s tests -v
-pnpm dev
-```
-
-See [the methodology](docs/GUNTUR_DATASET_METHODOLOGY.md), [model card](docs/MODEL_CARD.md), and [runbook](docs/GUNTUR_PIPELINE_RUNBOOK.md). **All baseline, event-demand, and travel-time values are modeled—not measured Guntur road-sensor data.** OSM geometry/identifiers retain OpenStreetMap attribution and ODbL obligations.
-
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 RouteCast combines real external geospatial services with simulated and predicted intelligence.
 
 Real services include routing, geocoding, weather, map tiles, and POI discovery. Event-mode traffic, some city metrics, scenarios, and default predictive outputs are deterministic or heuristic unless an optional ONNX model is available.

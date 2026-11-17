@@ -1,28 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-<<<<<<< HEAD
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import type { Basemap, MapLayers, FlyTarget, LatLng } from "@/components/city-map"
 import { LayerControls } from "@/components/layer-controls"
 import { LocationSearch, type Place } from "@/components/location-search"
 import { Satellite, Moon, Layers } from "lucide-react"
 import { GUNTUR_BOUNDS, GUNTUR_CENTER, GUNTUR_PLACES } from "@/lib/guntur-places"
-=======
-import useSWR from "swr"
-import dynamic from "next/dynamic"
-import type { PlanResponse, ScenarioType } from "@/lib/types"
-import type { Basemap, MapLayers, FlyTarget, LatLng } from "@/components/city-map"
-import { ControlPanel } from "@/components/control-panel"
-import { LayerControls } from "@/components/layer-controls"
-import { LocationSearch, type Place } from "@/components/location-search"
-import { Satellite, Moon, Layers } from "lucide-react"
-import { MetricsDashboard } from "@/components/metrics-dashboard"
-import { ScenarioPanel } from "@/components/scenario-panel"
-import { ComparisonTable } from "@/components/comparison-table"
-import { ForecastStrip } from "@/components/forecast-strip"
-import { useAreaNames } from "@/hooks/use-area-names"
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 import { NavigationPanel } from "@/components/navigation-panel"
 import { useNavigationRoute, type NavPoint, type TravelMode } from "@/hooks/use-navigation-route"
 import { useGeolocation } from "@/hooks/use-geolocation"
@@ -32,30 +16,26 @@ import { PoiPanel, type Poi } from "@/components/poi-panel"
 import { useRouteIntel, type IntelScenarioType } from "@/hooks/use-route-intel"
 import { RouteIntelPanel } from "@/components/route-intel-panel"
 import { WhatIfPanel } from "@/components/whatif-panel"
-<<<<<<< HEAD
 import { EventSchedulerPanel } from "@/components/event-scheduler-panel"
+import { DEMO_PRESETS, localHourIso, type DemoPreset } from "@/lib/demo-presets"
+import { OrganizerPlanPanel, type PlanOverlay } from "@/components/organizer-plan-panel"
 import type { EventSimulationResponse } from "@/lib/types"
+import { MAX_EVENTS, eventIntensityAtHour } from "@/lib/event-model-inputs"
 import { ImpactDashboard } from "@/components/impact-dashboard"
 import { MetricsDashboard } from "@/components/metrics-dashboard"
-import type { CityMetrics } from "@/lib/types"
+import { computeRouteMetrics } from "@/lib/route-metrics"
 import { TimeSlider } from "@/components/time-slider"
 import { IsochronePanel } from "@/components/isochrone-panel"
 import { EmergencyPanel } from "@/components/emergency-panel"
 
 // Map must be client-only (Leaflet accesses window)
-=======
-import { GunturRoutePanel } from "@/components/guntur-route-panel"
-
-// map + 3D must be client-only
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 const CityMap = dynamic(() => import("@/components/city-map").then((m) => m.CityMap), {
   ssr: false,
   loading: () => <ViewLoading label="Loading map" />,
 })
-<<<<<<< HEAD
 
 type EventPin = { lat: number; lng: number; name: string; radiusMeters: number }
-type HeatmapSegment = { points: [number, number][]; congestion: number; highway: string }
+type HeatmapSegment = { points: [number, number][]; congestion: number; highway: string; baseCongestion?: number; delaySec?: number }
 
 export default function Page() {
   const [basemap, setBasemap] = useState<Basemap>("satellite")
@@ -63,35 +43,6 @@ export default function Page() {
   const [place, setPlace] = useState<Place | null>(null)
   const [tripStart, setTripStart] = useState<LatLng | null>(null)
   const [tripEnd, setTripEnd] = useState<LatLng | null>(null)
-=======
-const Hologram2D = dynamic(() => import("@/components/hologram-2d").then((m) => m.Hologram2D), {
-  ssr: false,
-})
-const Hologram3D = dynamic(() => import("@/components/hologram-3d").then((m) => m.Hologram3D), {
-  ssr: false,
-  loading: () => <ViewLoading label="Projecting hologram" />,
-})
-
-type ViewMode = "map" | "2d" | "3d"
-type Weights = { time: number; distance: number; congestion: number }
-type Scenario = { type: ScenarioType; intensity: number }
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
-
-export default function Page() {
-  const [view, setView] = useState<ViewMode>("map")
-  const [weights, setWeights] = useState<Weights>({ time: 0.5, distance: 0.2, congestion: 0.3 })
-  const [scenario, setScenario] = useState<Scenario>({ type: "none", intensity: 0.6 })
-  const [selected, setSelected] = useState<string | null>(null)
-  const [basemap, setBasemap] = useState<Basemap>("satellite")
-  const [flyTo, setFlyTo] = useState<FlyTarget | null>(null)
-  const [place, setPlace] = useState<Place | null>(null)
-  const [density, setDensity] = useState(0.7)
-  const [appMode, setAppMode] = useState<"event" | "directions">("event")
-  const [tripStart, setTripStart] = useState<LatLng | null>(null)
-  const [tripEnd, setTripEnd] = useState<LatLng | null>(null)
-  // Real OSM/OSRM navigation state
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   const [navFrom, setNavFrom] = useState<NavPoint | null>(null)
   const [navTo, setNavTo] = useState<NavPoint | null>(null)
   const [travelMode, setTravelMode] = useState<TravelMode>("driving")
@@ -99,10 +50,6 @@ export default function Page() {
   const [navStops, setNavStops] = useState<NavPoint[]>([])
   const [pois, setPois] = useState<Poi[]>([])
   const [layersOpen, setLayersOpen] = useState(false)
-<<<<<<< HEAD
-=======
-  // What-if scenario for the REAL routing/AI layer (separate from the grid twin).
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   const [intelScenario, setIntelScenario] = useState<{ type: IntelScenarioType; intensity: number }>({
     type: "none",
     intensity: 0.6,
@@ -114,23 +61,46 @@ export default function Page() {
     closures: true,
   })
 
-<<<<<<< HEAD
   // Event pin — placed by the user clicking the map in "event" mode
   const [eventPin, setEventPin] = useState<EventPin | null>(null)
   const [outOfBoundsWarning, setOutOfBoundsWarning] = useState(false)
   const [osrmStatus, setOsrmStatus] = useState<"checking" | "ok" | "down">("checking")
   const [simulationResult, setSimulationResult] = useState<EventSimulationResponse | null>(null)
-  const [pendingDemoSimulate, setPendingDemoSimulate] = useState(false)
+  // Every simulated event (up to MAX_EVENTS). `simulationResult` is the one last
+  // simulated and drives the single-event panels; the route table, dashboard,
+  // map zones and heatmap use all of them.
+  const [events, setEvents] = useState<EventSimulationResponse[]>([])
+  const [eventCapWarning, setEventCapWarning] = useState(false)
+  const eventKey = (lat: number, lng: number) => `${lat.toFixed(5)},${lng.toFixed(5)}`
+  const commitSimulation = useCallback((result: EventSimulationResponse | null) => {
+    setSimulationResult(result)
+    if (!result) return
+    setEvents((prev) => {
+      const key = `${result.event.lat.toFixed(5)},${result.event.lng.toFixed(5)}`
+      const index = prev.findIndex((e) => `${e.event.lat.toFixed(5)},${e.event.lng.toFixed(5)}` === key)
+      if (index >= 0) return prev.map((e, i) => (i === index ? result : e))
+      return prev.length >= MAX_EVENTS ? prev : [...prev, result]
+    })
+  }, [])
+  const removeEventAt = useCallback((lat: number, lng: number) => {
+    const key = `${lat.toFixed(5)},${lng.toFixed(5)}`
+    setEvents((prev) => prev.filter((e) => `${e.event.lat.toFixed(5)},${e.event.lng.toFixed(5)}` !== key))
+    setSimulationResult((cur) => (cur && `${cur.event.lat.toFixed(5)},${cur.event.lng.toFixed(5)}` === key ? null : cur))
+  }, [])
+  const [pendingDemo, setPendingDemo] = useState<DemoPreset | null>(null)
+  const [demoMenuOpen, setDemoMenuOpen] = useState(false)
   const demoSimulationInFlight = useRef(false)
   const [eventIncidentLocation, setEventIncidentLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [eventDriven, setEventDriven] = useState(false)
   const eventDrivenRef = useRef(false)
   const [heatmapSegments, setHeatmapSegments] = useState<HeatmapSegment[]>([])
+  const [heatMode, setHeatMode] = useState<"event" | "normal" | "change">("event")
   const [timeOverride, setTimeOverride] = useState<number | null>(null)
   const [debouncedHeatmapHour, setDebouncedHeatmapHour] = useState<number | null>(timeOverride)
   const [isochroneNormal, setIsochroneNormal] = useState<[number, number][]>([])
   const [isochroneAffected, setIsochroneAffected] = useState<[number, number][]>([])
   const [emergencyRoute, setEmergencyRoute] = useState<[number, number][]>([])
+  const [planOverlay, setPlanOverlay] = useState<PlanOverlay | null>(null)
   const [closurePoints, setClosurePoints] = useState<[{ lat: number; lng: number }, { lat: number; lng: number }] | null>(null)
   const [awaitingClosurePoint, setAwaitingClosurePoint] = useState<0 | 1 | null>(null)
   // Controls what a map click does: route A/B picking, event placement, or scenario incident pin
@@ -243,30 +213,44 @@ export default function Page() {
   }, [timeOverride])
 
   useEffect(() => {
-    if (!simulationResult) {
+    if (events.length === 0) {
       setHeatmapSegments([])
       return
     }
 
-    const currentResult = simulationResult
     const controller = new AbortController()
     async function loadHeatmap() {
       try {
-        const response = await fetch("/api/heatmap", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            lat: currentResult.event.lat,
-            lng: currentResult.event.lng,
-            impactRadiusMeters: currentResult.event.impactRadiusMeters,
-            eventLoad: currentResult.event.eventLoad,
-            ...(debouncedHeatmapHour === null ? {} : { hourOverride: debouncedHeatmapHour }),
+        // One heat layer per event. At a slider hour each event only loads the
+        // roads while it is running: scale its load by its phase (0 before and
+        // after, 1 at its midpoint). The live view shows events at their peak.
+        const layers = await Promise.all(
+          events.map(async (current) => {
+            const eventPhase =
+              debouncedHeatmapHour === null
+                ? 1
+                : eventIntensityAtHour(debouncedHeatmapHour, new Date(current.event.startTime), new Date(current.event.endTime)).intensity
+            const response = await fetch("/api/heatmap", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                lat: current.event.lat,
+                lng: current.event.lng,
+                impactRadiusMeters: current.event.impactRadiusMeters,
+                eventLoad: current.event.eventLoad * eventPhase,
+                attendance: current.event.attendance,
+                eventPhase,
+                ...(debouncedHeatmapHour === null ? {} : { hourOverride: debouncedHeatmapHour }),
+              }),
+              signal: controller.signal,
+            })
+            if (!response.ok) throw new Error("Heatmap request failed")
+            const data = (await response.json()) as { segments?: HeatmapSegment[] }
+            return Array.isArray(data.segments) ? data.segments : []
           }),
-          signal: controller.signal,
-        })
-        if (!response.ok) throw new Error("Heatmap request failed")
-        const data = (await response.json()) as { segments?: HeatmapSegment[] }
-        setHeatmapSegments(Array.isArray(data.segments) ? data.segments : [])
+        )
+        // Hottest segments last so they draw on top where events overlap.
+        setHeatmapSegments(layers.flat().sort((a, b) => a.congestion - b.congestion))
       } catch {
         if (!controller.signal.aborted) setHeatmapSegments([])
       }
@@ -274,19 +258,12 @@ export default function Page() {
 
     void loadHeatmap()
     return () => controller.abort()
-  }, [simulationResult, debouncedHeatmapHour])
+  }, [events, debouncedHeatmapHour])
 
   const isSatellite = basemap !== "dark"
 
   function handlePlace(p: Place) {
     setPlace(p)
-=======
-  // "Neon" view = the dark carto basemap; "Satellite" = Esri hybrid imagery.
-  const isSatellite = basemap !== "dark"
-  function handlePlace(p: Place) {
-    setPlace(p)
-    setDensity(areaDensityFor(p.kind))
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
     setFlyTo({ lat: p.lat, lng: p.lng, zoom: p.kind === "country" ? 6 : p.kind === "state" ? 9 : 13, nonce: Date.now() })
   }
 
@@ -301,20 +278,24 @@ export default function Page() {
     setTripEnd(p ? { lat: p.lat, lng: p.lon } : null)
   }
 
-<<<<<<< HEAD
-  function loadDemo() {
-    const from = GUNTUR_PLACES.find((place) => place.id === "guntur-jn")!
-    const to = GUNTUR_PLACES.find((place) => place.id === "loyola-college")!
-    const eventLoc = GUNTUR_PLACES.find((place) => place.id === "bus-stand")!
+  function loadDemo(preset: DemoPreset) {
+    const place = (id: string) => GUNTUR_PLACES.find((p) => p.id === id)!
+    const from = place(preset.fromPlaceId)
+    const to = place(preset.toPlaceId)
+    const first = place(preset.events[0].placeId)
 
     pickFrom({ lat: from.lat, lon: from.lng, label: from.name })
     pickTo({ lat: to.lat, lon: to.lng, label: to.name })
-    setEventPin({ lat: eventLoc.lat, lng: eventLoc.lng, name: "Sankranthi Festival", radiusMeters: 800 })
+    setEvents([])
+    setSimulationResult(null)
+    setTimeOverride(null)
+    setEventPin({ lat: first.lat, lng: first.lng, name: preset.events[0].name, radiusMeters: preset.events[0].radiusMeters })
     setMapClickMode("route")
     setAwaitingClosurePoint(null)
     setClosurePoints(null)
     setFlyTo({ lat: GUNTUR_CENTER.lat, lng: GUNTUR_CENTER.lng, zoom: 14, nonce: Date.now() })
-    setPendingDemoSimulate(true)
+    setDemoMenuOpen(false)
+    setPendingDemo(preset)
   }
 
   // Google-Maps-style point picking: 1st click = start (A), 2nd = end (B),
@@ -340,6 +321,11 @@ export default function Page() {
         return
       }
       setOutOfBoundsWarning(false)
+      if (events.length >= MAX_EVENTS) {
+        setEventCapWarning(true)
+        return
+      }
+      setEventCapWarning(false)
       setEventPin({ lat: p.lat, lng: p.lng, name: "Event Location", radiusMeters: 500 })
       return
     }
@@ -353,13 +339,6 @@ export default function Page() {
     }
 
     // While navigating, a click means "I'm here now" — drives the
-=======
-  // Google-Maps-style point picking: 1st click = start (A), 2nd = end (B),
-  // 3rd click starts a fresh trip. Labels come from reverse geocoding.
-  async function handleMapClick(p: LatLng) {
-    if (appMode !== "directions") return
-    // While navigating, a click means "I'm here now" — this drives the
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
     // off-route/reroute path on desktop where there is no moving GPS.
     if (navigating) {
       geo.setManualFix(p.lat, p.lng)
@@ -388,7 +367,6 @@ export default function Page() {
     }
   }
 
-<<<<<<< HEAD
   // Only stops that were actually resolved to coordinates are routable.
   const validStops = useMemo(() => navStops.filter((w) => w.lat !== 0 || w.lon !== 0), [navStops])
 
@@ -396,54 +374,141 @@ export default function Page() {
   const nav = useNavigationRoute(navFrom, navTo, travelMode, validStops)
   const activeRouteId = nav.routes.some((r) => r.id === activeNavId) ? activeNavId : (nav.routes[0]?.id ?? null)
 
+  // Re-score the routes against ALL simulated events. This runs when more than
+  // one event exists, or when the Traffic Time slider sets an hour. With one
+  // event and no slider hour (Live), the scheduler's own result is shown.
+  const baseResult = simulationResult ?? events[events.length - 1] ?? null
+  // The isochrone, emergency and closure checks take a single event. With
+  // several, use the one loading the roads most at the evaluated hour.
+  const strongestEvent = useMemo((): EventSimulationResponse | null => {
+    let best: EventSimulationResponse | null = null
+    let bestLoad = -1
+    for (const current of events) {
+      const phase =
+        timeOverride === null
+          ? 1
+          : eventIntensityAtHour(timeOverride, new Date(current.event.startTime), new Date(current.event.endTime)).intensity
+      const load = current.event.eventLoad * phase
+      if (load > bestLoad) {
+        best = current
+        bestLoad = load
+      }
+    }
+    return best ?? simulationResult
+  }, [events, timeOverride, simulationResult])
+  const eventsSignature = events.map((e) => `${e.event.lat.toFixed(5)},${e.event.lng.toFixed(5)},${e.event.attendance},${e.event.startTime},${e.event.endTime},${e.event.type}`).join("|")
+  const [combined, setCombined] = useState<{ signature: string; result: EventSimulationResponse } | null>(null)
   useEffect(() => {
-    if (!pendingDemoSimulate || nav.loading || nav.routes.length === 0 || !eventPin || demoSimulationInFlight.current) return
+    const needsRescore = events.length > 1 || (events.length === 1 && debouncedHeatmapHour !== null)
+    if (!needsRescore || nav.routes.length === 0) {
+      setCombined(null)
+      return
+    }
+    const signature = `${eventsSignature}@${debouncedHeatmapHour ?? "peak"}`
+    const hour = debouncedHeatmapHour
+    const controller = new AbortController()
+    async function loadCombined() {
+      try {
+        const response = await fetch("/api/event/simulate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            events: events.map((e) => ({
+              name: e.event.name,
+              type: e.event.type,
+              lat: e.event.lat,
+              lng: e.event.lng,
+              locationName: e.event.locationName,
+              startTime: e.event.startTime,
+              endTime: e.event.endTime,
+              attendance: e.event.attendance,
+            })),
+            routes: nav.routes.map((route) => ({
+              id: route.id,
+              label: route.label,
+              distanceMeters: route.distanceMeters,
+              durationSeconds: route.durationSeconds,
+              samplePoints: route.latLngs
+                .filter((_, index) => index % 3 === 0 || index === route.latLngs.length - 1)
+                .map(([lat, lng]) => ({ lat, lng })),
+            })),
+            ...(hour === null ? {} : { hourOverride: hour }),
+          }),
+          signal: controller.signal,
+        })
+        if (!response.ok) throw new Error("Combined event simulation failed")
+        setCombined({ signature, result: (await response.json()) as EventSimulationResponse })
+      } catch {
+        if (!controller.signal.aborted) setCombined(null)
+      }
+    }
+    void loadCombined()
+    return () => controller.abort()
+    // eventsSignature stands in for `events` (same content, stable identity).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventsSignature, debouncedHeatmapHour, nav.routes])
 
-    const pin = eventPin
+  // The selected event's result, with its routes replaced by the combined,
+  // hour-aware ones when those are available for the current events and hour.
+  const displayResult = useMemo((): EventSimulationResponse | null => {
+    if (!baseResult) return null
+    const signature = `${eventsSignature}@${debouncedHeatmapHour ?? "peak"}`
+    if (!combined || combined.signature !== signature) return baseResult
+    const { routes, source, note, evaluation, events: combinedEvents } = combined.result
+    return { ...baseResult, routes, source, note, evaluation, events: combinedEvents }
+  }, [baseResult, combined, eventsSignature, debouncedHeatmapHour])
+
+  useEffect(() => {
+    if (!pendingDemo || nav.loading || nav.routes.length === 0 || !eventPin || demoSimulationInFlight.current) return
+
+    const preset = pendingDemo
     const routes = nav.routes
     const timer = window.setTimeout(() => {
       demoSimulationInFlight.current = true
-      async function simulateDemoEvent() {
+      async function simulateDemoEvents() {
         try {
-          const response = await fetch("/api/event/simulate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              event: {
-                name: "Sankranthi Festival",
-                type: "festival",
-                lat: pin.lat,
-                lng: pin.lng,
-                locationName: "Guntur Bus Stand (APSRTC)",
-                startTime: new Date(Date.now() + 2 * 3600_000).toISOString(),
-                endTime: new Date(Date.now() + 6 * 3600_000).toISOString(),
-                attendance: 45000,
-              },
-              routes: routes.map((route) => ({
-                id: route.id,
-                label: route.label,
-                distanceMeters: route.distanceMeters,
-                durationSeconds: route.durationSeconds,
-                samplePoints: route.latLngs.map(([lat, lng]) => ({ lat, lng })),
-              })),
-            }),
-          })
-          if (!response.ok) throw new Error("Demo event simulation failed")
-          const data = (await response.json()) as EventSimulationResponse
-          setSimulationResult(data)
+          const routePayload = routes.map((route) => ({
+            id: route.id,
+            label: route.label,
+            distanceMeters: route.distanceMeters,
+            durationSeconds: route.durationSeconds,
+            samplePoints: route.latLngs.map(([lat, lng]) => ({ lat, lng })),
+          }))
+          for (const ev of preset.events) {
+            const venue = GUNTUR_PLACES.find((p) => p.id === ev.placeId)!
+            const response = await fetch("/api/event/simulate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                event: {
+                  name: ev.name,
+                  type: ev.type,
+                  lat: venue.lat,
+                  lng: venue.lng,
+                  locationName: venue.name,
+                  startTime: localHourIso(ev.startHour),
+                  endTime: localHourIso(ev.endHour),
+                  attendance: ev.attendance,
+                },
+                routes: routePayload,
+              }),
+            })
+            if (!response.ok) throw new Error("Demo event simulation failed")
+            commitSimulation((await response.json()) as EventSimulationResponse)
+          }
         } catch (error) {
           console.error("Demo event simulation failed:", error)
         } finally {
           demoSimulationInFlight.current = false
-          setPendingDemoSimulate(false)
+          setPendingDemo(null)
         }
       }
 
-      void simulateDemoEvent()
+      void simulateDemoEvents()
     }, 1200)
 
     return () => window.clearTimeout(timer)
-  }, [pendingDemoSimulate, nav.routes, eventPin, nav.loading])
+  }, [pendingDemo, nav.routes, eventPin, nav.loading, commitSimulation])
 
   // AI decision layer: scores the same trip with traffic, weather + incidents.
   // When event-driven, use the event's location; otherwise use the manually placed scenario pin.
@@ -456,52 +521,6 @@ export default function Page() {
     if (recommendedId && nav.routes.some((route) => route.id === recommendedId)) setActiveNavId(recommendedId)
   }, [eventDriven, intel.intel?.recommendation?.routeId, nav.routes])
 
-=======
-  const query = useMemo(() => {
-    const center = place ? `&lat=${place.lat}&lng=${place.lng}` : ""
-    if (appMode === "directions") {
-      const pts =
-        tripStart && tripEnd
-          ? `&fromLat=${tripStart.lat}&fromLng=${tripStart.lng}&toLat=${tripEnd.lat}&toLng=${tripEnd.lng}`
-          : ""
-      return (
-        `/api/plan?mode=directions&wTime=${weights.time}&wDistance=${weights.distance}` +
-        `&wCongestion=${weights.congestion}&scenario=${scenario.type}&intensity=${scenario.intensity}` +
-        `&density=${density}${center}${pts}`
-      )
-    }
-    return (
-      `/api/plan?wTime=${weights.time}&wDistance=${weights.distance}&wCongestion=${weights.congestion}` +
-      `&scenario=${scenario.type}&intensity=${scenario.intensity}&density=${density}${center}`
-    )
-  }, [weights, scenario, density, place, appMode, tripStart, tripEnd])
-  const { data, error } = useSWR<PlanResponse>(query, fetcher, { refreshInterval: 15000 })
-  const live = !!data && !error
-  const areaNames = useAreaNames(data)
-
-  // Only stops that were actually resolved to coordinates are routable.
-  const validStops = useMemo(() => navStops.filter((w) => w.lat !== 0 || w.lon !== 0), [navStops])
-
-  // Real routing (OSRM over OpenStreetMap) — active in Directions mode.
-  const nav = useNavigationRoute(
-    appMode === "directions" ? navFrom : null,
-    appMode === "directions" ? navTo : null,
-    travelMode,
-    validStops,
-  )
-  const activeRouteId = nav.routes.some((r) => r.id === activeNavId) ? activeNavId : (nav.routes[0]?.id ?? null)
-
-  // AI decision layer: scores the same trip with traffic, weather + incidents.
-  const intel = useRouteIntel(
-    appMode === "directions" ? navFrom : null,
-    appMode === "directions" ? navTo : null,
-    travelMode,
-    validStops,
-    intelScenario,
-  )
-  const scenarioActive = intelScenario.type !== "none" && !!intel.scenario
-
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   // Device location + live navigation session (progress, off-route, reroute).
   const geo = useGeolocation()
   const session = useNavSession({
@@ -541,10 +560,6 @@ export default function Page() {
 
   /** POI "Directions": the POI becomes B, origin stays A (or the live fix). */
   function poiDirections(p: NavPoint) {
-<<<<<<< HEAD
-=======
-    setAppMode("directions")
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
     if (!navFrom && geo.fix) {
       setNavFrom({ lat: geo.fix.lat, lon: geo.fix.lon, label: "My location" })
       setTripStart({ lat: geo.fix.lat, lng: geo.fix.lon })
@@ -575,36 +590,43 @@ export default function Page() {
         ? { lat: place.lat, lon: place.lng }
         : null
 
-<<<<<<< HEAD
   const isochroneOrigin = tripStart ?? (eventPin ? { lat: eventPin.lat, lng: eventPin.lng } : null)
 
-  // ── City metrics derived from live route + simulation state ──────────────
+  // ── Route metrics: each value is tagged with where it came from ──────────
   const activeRoute = nav.routes.find((r) => r.id === activeRouteId) ?? nav.routes[0] ?? null
-  const cityMetrics = useMemo((): CityMetrics => {
-    const distKm = activeRoute ? activeRoute.distanceMeters / 1000 : 5
-    const durationSec = activeRoute ? activeRoute.durationSeconds : 600
-    const avgSpeedKmh = durationSec > 0 ? Math.round((distKm / durationSec) * 3600) : 30
-    // congestion: use simulation result if available, else intel, else heuristic from speed
-    const congestionIndex = simulationResult
-      ? Math.min(1, simulationResult.event.eventLoad)
-      : intel.intel?.routes?.[0]?.congestionScore != null
-        ? intel.intel.routes[0].congestionScore / 100
-        : Math.max(0, Math.min(1, 1 - avgSpeedKmh / 50))
-    const congMultiplier = 1 + congestionIndex * 0.6
-    const co2Kg = Math.round(distKm * 0.21 * congMultiplier * 10) / 10
-    const fuelL = Math.round(distKm * 0.08 * congMultiplier * 10) / 10
-    return {
-      avgSpeedKmh,
-      congestionIndex,
-      activeIncidents: intel.incidents?.length ?? (simulationResult ? 1 : 0),
-      aqi: simulationResult ? Math.round(60 + congestionIndex * 80) : 55,
-      ambulanceResponseMin: Math.round(8 + congestionIndex * 7),
-      co2Kg,
-      fuelL,
-    }
-  }, [activeRoute, simulationResult, intel.intel, intel.incidents])
 
-  const avgTravelMin = activeRoute ? Math.round(activeRoute.durationSeconds / 60) : 0
+  // Ambient air quality for the city centre (Copernicus CAMS via Open-Meteo).
+  // It is background data and does not react to simulated events.
+  const [ambientAqi, setAmbientAqi] = useState<number | null>(null)
+  useEffect(() => {
+    const controller = new AbortController()
+    fetch(`/api/air-quality?lat=${GUNTUR_CENTER.lat}&lng=${GUNTUR_CENTER.lng}`, { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { aqi?: unknown } | null) => setAmbientAqi(typeof data?.aqi === "number" ? data.aqi : null))
+      .catch(() => {
+        if (!controller.signal.aborted) setAmbientAqi(null)
+      })
+    return () => controller.abort()
+  }, [])
+
+  const routeMetrics = useMemo(() => {
+    // The prediction for the active route (matched by id, then by label), from
+    // the combined / hour-aware result when one exists.
+    const simulated = activeRoute
+      ? (displayResult?.routes.find((candidate) => candidate.routeId === activeRoute.id) ??
+        displayResult?.routes.find((candidate) => candidate.label.trim().toLowerCase() === activeRoute.label.trim().toLowerCase()) ??
+        null)
+      : null
+    const intelScoreRow = intel.intel?.scores.find((s) => s.id === activeRoute?.id) ?? intel.intel?.scores[0]
+    const intelScore = intelScoreRow ? intelScoreRow.trafficLevel * 100 : null
+    return computeRouteMetrics({
+      route: activeRoute,
+      simulated,
+      intelCongestionPct: typeof intelScore === "number" ? intelScore : null,
+      incidentCount: intel.incidents?.length ?? 0,
+      aqi: ambientAqi,
+    })
+  }, [activeRoute, displayResult, intel.intel, intel.incidents, ambientAqi])
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground md:flex-row">
@@ -633,116 +655,32 @@ export default function Page() {
             pois={pois.map((p) => ({ id: p.id, name: p.name, lat: p.lat, lon: p.lon }))}
             geoIncidents={intel.incidents}
             eventPin={eventPin}
+            otherEvents={events
+              .filter((e) => !eventPin || eventKey(e.event.lat, e.event.lng) !== eventKey(eventPin.lat, eventPin.lng))
+              .map((e) => ({ id: e.event.id, lat: e.event.lat, lng: e.event.lng, name: e.event.name, radiusMeters: e.event.impactRadiusMeters }))}
             simulationResult={simulationResult}
             heatmapSegments={heatmapSegments}
+            heatMode={heatMode}
             isochroneNormal={isochroneNormal}
             isochroneAffected={isochroneAffected}
             emergencyRoute={emergencyRoute}
+            planOverlay={planOverlay}
             closurePoints={closurePoints}
             onLocate={() => {
               if (geo.fix) setFlyTo({ lat: geo.fix.lat, lng: geo.fix.lon, zoom: 16, nonce: Date.now() })
               else geo.locateOnce()
             }}
           />
-=======
-  return (
-    <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground md:flex-row">
-      {/* view area */}
-      <div className="relative min-h-0 flex-1">
-        {/* grid backdrop for hologram modes */}
-        {view !== "map" && (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-0 opacity-20"
-            style={{
-              backgroundImage:
-                "linear-gradient(var(--color-primary) 1px, transparent 1px), linear-gradient(90deg, var(--color-primary) 1px, transparent 1px)",
-              backgroundSize: "40px 40px",
-              maskImage: "radial-gradient(ellipse at center, black 20%, transparent 72%)",
-            }}
-          />
-        )}
-
-        <div className="absolute inset-0 z-0">
-          {data ? (
-            view === "map" ? (
-              <CityMap
-                data={data}
-                selectedInviteeId={selected}
-                basemap={basemap}
-                layers={layers}
-                flyTo={flyTo}
-                directions={appMode === "directions"}
-                tripStart={tripStart}
-                tripEnd={tripEnd}
-                onMapClick={handleMapClick}
-                navRoutes={drawnRoutes}
-                activeNavId={session.isRerouted ? drawnRoutes[0]?.id : activeRouteId}
-                currentPos={geo.fix ? { lat: geo.fix.lat, lng: geo.fix.lon, accuracy: geo.fix.accuracy } : null}
-                snappedPos={
-                  session.progress
-                    ? { lat: session.progress.snapped[0], lng: session.progress.snapped[1] }
-                    : null
-                }
-                followPos={navigating && session.follow}
-                navigating={navigating}
-                waypoints={validStops.map((w) => ({ lat: w.lat, lng: w.lon }))}
-                pois={pois.map((p) => ({ id: p.id, name: p.name, lat: p.lat, lon: p.lon }))}
-                geoIncidents={intel.incidents}
-                onLocate={() => {
-                  if (geo.fix) setFlyTo({ lat: geo.fix.lat, lng: geo.fix.lon, zoom: 16, nonce: Date.now() })
-                  else geo.locateOnce()
-                }}
-              />
-            ) : view === "2d" ? (
-              <Hologram2D data={data} selectedInviteeId={selected} />
-            ) : (
-              <Hologram3D
-                data={data}
-                selectedInviteeId={selected}
-                follow={navigating && session.follow}
-                // Real geographic geometry feeds the twin — no hard-coded 3D points.
-                nav={
-                  appMode === "directions" && drawnRoutes.length > 0
-                    ? {
-                        routes: drawnRoutes.map((r) => ({ id: r.id, latLngs: r.latLngs })),
-                        activeId: session.isRerouted ? drawnRoutes[0].id : activeRouteId,
-                        origin: navFrom,
-                        destination: navTo,
-                        waypoints: validStops,
-                        currentPos: geo.fix ? { lat: geo.fix.lat, lon: geo.fix.lon } : null,
-                        pois: pois.map((p) => ({ id: p.id, lat: p.lat, lon: p.lon })),
-                        incidents: intel.incidents.map((i) => ({
-                          id: i.id,
-                          lat: i.lat,
-                          lon: i.lon,
-                          type: i.type,
-                          severity: i.severity,
-                          radiusMeters: i.radiusMeters,
-                        })),
-                      }
-                    : null
-                }
-              />
-            )
-          ) : (
-            <ViewLoading label={error ? "Failed to load" : "Optimizing routes"} />
-          )}
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
         </div>
 
         {/* overlay header */}
-        <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
+        <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between gap-3 p-4">
           <div className="pointer-events-auto flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 backdrop-blur-md">
             <div>
               <h1 className="font-mono text-sm font-semibold tracking-tight text-balance">
                 ROUTE<span className="text-primary">CAST</span>
               </h1>
-<<<<<<< HEAD
               <p className="text-[10px] text-muted-foreground">Guntur Digital Twin</p>
-=======
-              <p className="text-[10px] text-muted-foreground">Event route digital twin</p>
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
             </div>
             <a
               href="/presentation"
@@ -750,7 +688,6 @@ export default function Page() {
             >
               Deck
             </a>
-<<<<<<< HEAD
             <span
               title={osrmStatus === "ok" ? "OSRM routing server online" : osrmStatus === "checking" ? "Checking routing server…" : "OSRM routing server unreachable"}
               className="flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground backdrop-blur-md"
@@ -763,13 +700,31 @@ export default function Page() {
           </div>
 
           <div className="pointer-events-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={loadDemo}
-              className="flex items-center gap-1.5 rounded-full border border-primary/60 bg-primary/10 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-primary backdrop-blur-md transition-colors hover:bg-primary/20"
-            >
-              ▶ Demo
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setDemoMenuOpen((open) => !open)}
+                aria-expanded={demoMenuOpen}
+                className="flex items-center gap-1.5 rounded-full border border-primary/60 bg-primary/10 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-primary backdrop-blur-md transition-colors hover:bg-primary/20"
+              >
+                ▶ Demo ▾
+              </button>
+              {demoMenuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-border bg-card/95 p-1.5 shadow-lg backdrop-blur-md">
+                  {DEMO_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => loadDemo(preset)}
+                      className="block w-full rounded-lg px-3 py-2 text-left hover:bg-primary/10"
+                    >
+                      <span className="block font-mono text-[11px] uppercase tracking-wider text-primary">{preset.label}</span>
+                      <span className="mt-0.5 block text-[10px] leading-snug text-muted-foreground">{preset.shows}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -803,6 +758,11 @@ export default function Page() {
             {mapClickMode === "scenario" && (
               <span className="rounded-full border border-destructive bg-destructive/10 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-destructive backdrop-blur-md animate-pulse">
                 Click map to place incident
+              </span>
+            )}
+            {eventCapWarning && (
+              <span role="alert" className="rounded-full border border-amber-400/50 bg-amber-400/10 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-amber-300 backdrop-blur-md">
+                Maximum {MAX_EVENTS} events — remove one first
               </span>
             )}
             {outOfBoundsWarning && (
@@ -909,11 +869,33 @@ export default function Page() {
           >
             📍 Place Event
           </button>
+          {events.map((e) => (
+            <span
+              key={e.event.id}
+              className="flex items-center gap-1.5 rounded-full border border-violet-400/40 bg-card px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider text-foreground backdrop-blur-md"
+            >
+              <span aria-hidden>📍</span>
+              <span className="max-w-[9rem] truncate">{e.event.name}</span>
+              <button
+                type="button"
+                aria-label={`Remove event ${e.event.name}`}
+                onClick={() => {
+                  removeEventAt(e.event.lat, e.event.lng)
+                  setEventCapWarning(false)
+                }}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                ×
+              </button>
+            </span>
+          ))}
           {eventPin && (
             <button
               onClick={() => {
+                removeEventAt(eventPin.lat, eventPin.lng)
                 setEventPin(null)
                 setSimulationResult(null)
+                setEventCapWarning(false)
               }}
               className="rounded-full border border-border bg-card px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground backdrop-blur-md hover:border-destructive hover:text-destructive"
             >
@@ -923,117 +905,6 @@ export default function Page() {
         </div>
 
         {/* Live turn-by-turn HUD */}
-=======
-          </div>
-
-          <div className="pointer-events-auto flex items-center gap-2">
-            {view === "map" && (
-              <button
-                onClick={() => setBasemap(isSatellite ? "dark" : "hybrid")}
-                aria-label={isSatellite ? "Switch to neon view" : "Switch to satellite view"}
-                className="flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-foreground backdrop-blur-md transition-colors hover:border-primary"
-              >
-                {isSatellite ? <Moon className="h-3.5 w-3.5" /> : <Satellite className="h-3.5 w-3.5 text-primary" />}
-                {isSatellite ? "Neon" : "Satellite"}
-              </button>
-            )}
-            {scenario.type !== "none" && (
-              <span className="rounded-full border border-destructive/50 bg-card px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-destructive backdrop-blur-md">
-                Scenario
-              </span>
-            )}
-            <span
-              className={`flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest backdrop-blur-md ${
-                live ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${live ? "animate-pulse bg-primary" : "bg-muted-foreground"}`} />
-              {live ? "Live" : "…"}
-            </span>
-          </div>
-        </header>
-
-        {/* worldwide location search + mode toggle (map view only) */}
-        {view === "map" && (
-          <div className="absolute left-1/2 top-20 z-20 flex -translate-x-1/2 flex-col items-center gap-1.5">
-            <LocationSearch onSelect={handlePlace} />
-            <div className="pointer-events-auto flex gap-1 rounded-full border border-border bg-card p-0.5 backdrop-blur-md">
-              {(
-                [
-                  { id: "event", label: "Event" },
-                  { id: "directions", label: "Directions" },
-                ] as { id: "event" | "directions"; label: string }[]
-              ).map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setAppMode(m.id)}
-                  className={`rounded-full px-3 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors ${
-                    appMode === m.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-            {place && (
-              <span className="pointer-events-none rounded-full border border-border bg-card px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-primary backdrop-blur-md">
-                Viewing · {place.label.split(",").slice(0, 2).join(", ")}
-              </span>
-            )}
-            {appMode === "directions" && (
-              <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 font-mono text-[10px] text-muted-foreground backdrop-blur-md">
-                {navigating ? (
-                  <span className="text-primary">Click map to move your position</span>
-                ) : (
-                  <>
-                    <span className={tripStart ? "text-primary" : ""}>A {tripStart ? "set" : "· click map"}</span>
-                    <span className="text-border">|</span>
-                    <span className={tripEnd ? "text-primary" : ""}>B {tripEnd ? "set" : "· click map"}</span>
-                  </>
-                )}
-                {validStops.length > 0 && <span className="text-primary">· {validStops.length} stop(s)</span>}
-                {(tripStart || tripEnd) && (
-                  <button
-                    onClick={() => {
-                      setTripStart(null)
-                      setTripEnd(null)
-                      setNavFrom(null)
-                      setNavTo(null)
-                      setActiveNavId(null)
-                      setNavStops([])
-                      setPois([])
-                      session.stop()
-                      geo.clearFix()
-                    }}
-                    className="ml-1 rounded-full border border-border px-1.5 uppercase tracking-wider hover:border-primary hover:text-foreground"
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* layer + basemap controls (map view only) */}
-        {view === "map" && (
-          <div className="absolute right-4 top-20 z-10 flex flex-col items-end gap-1.5">
-            <button
-              onClick={() => setLayersOpen((o) => !o)}
-              aria-expanded={layersOpen}
-              className="flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-foreground backdrop-blur-md transition-colors hover:border-primary"
-            >
-              <Layers className="h-3.5 w-3.5 text-primary" aria-hidden />
-              Layers
-            </button>
-            {layersOpen && (
-              <LayerControls basemap={basemap} onBasemap={setBasemap} layers={layers} onLayers={setLayers} />
-            )}
-          </div>
-        )}
-
-        {/* live turn-by-turn HUD (map + 3D twin) */}
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
         {session.route && session.state !== "idle" && session.state !== "route_ready" && (
           <div className="pointer-events-none absolute inset-x-0 bottom-16 z-20 flex justify-center px-3">
             <NavHud
@@ -1052,11 +923,7 @@ export default function Page() {
           </div>
         )}
 
-<<<<<<< HEAD
         {/* Awaiting the first GPS fix after pressing Start */}
-=======
-        {/* awaiting the first fix after pressing Start */}
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
         {navigating && !geo.fix && (
           <div className="pointer-events-none absolute inset-x-0 bottom-16 z-20 flex justify-center px-3">
             <p className="rounded-full border border-primary/40 bg-card px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-primary backdrop-blur-md">
@@ -1065,7 +932,6 @@ export default function Page() {
           </div>
         )}
 
-<<<<<<< HEAD
         {/* Map-only view indicator at bottom */}
         <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded-xl border border-border bg-card p-1 backdrop-blur-md">
           <span className="rounded-lg px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider bg-primary text-primary-foreground">
@@ -1086,7 +952,7 @@ export default function Page() {
             mode={travelMode}
             onMode={setTravelMode}
             routes={nav.routes}
-            simulationResult={simulationResult}
+            simulationResult={displayResult}
             activeRouteId={activeRouteId}
             onActiveRoute={setActiveNavId}
             loading={nav.loading}
@@ -1106,7 +972,29 @@ export default function Page() {
             }}
           />
 
-          <TimeSlider value={timeOverride} onChange={setTimeOverride} simulationResult={simulationResult} />
+          <TimeSlider value={timeOverride} onChange={setTimeOverride} simulationResult={baseResult} />
+
+          {heatmapSegments.some((s) => s.baseCongestion !== undefined) && (
+            <div className="rounded-xl border border-border bg-card/50 p-3">
+              <h2 className="font-mono text-xs uppercase tracking-widest text-primary">Before / After</h2>
+              <div className="mt-2 grid grid-cols-3 gap-1" role="group" aria-label="Heatmap view">
+                {([["normal", "Before"], ["event", "After"], ["change", "Change"]] as const).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={heatMode === mode}
+                    onClick={() => setHeatMode(mode)}
+                    className={`rounded-md border px-2 py-1 font-mono text-[10px] uppercase tracking-wider ${heatMode === mode ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[10px] text-muted-foreground">
+                Before = normal traffic at this hour. After = with the event. Change = extra seconds per road the event adds. Modeled, same BPR model for both.
+              </p>
+            </div>
+          )}
 
           {/* 2. Route intelligence (AI scoring + weather + risk) */}
           <RouteIntelPanel
@@ -1119,10 +1007,17 @@ export default function Page() {
             onSelectRoute={setActiveNavId}
           />
 
+          {events.length > 1 && strongestEvent && (
+            <p className="rounded-md border border-border bg-card/40 px-2 py-1 font-mono text-[10px] text-muted-foreground">
+              Reachability, emergency and closure checks use the event loading the roads most at the chosen time:{" "}
+              <span className="text-foreground">{strongestEvent.event.name}</span> (1 of {events.length}).
+            </p>
+          )}
+
           <IsochronePanel
             origin={isochroneOrigin}
             mode={travelMode}
-            simulationResult={simulationResult}
+            simulationResult={strongestEvent}
             onIsochrone={(normal, affected) => {
               setIsochroneNormal(normal)
               setIsochroneAffected(affected)
@@ -1134,7 +1029,7 @@ export default function Page() {
           />
 
           <EmergencyPanel
-            simulationResult={simulationResult}
+            simulationResult={strongestEvent}
             timeOverride={timeOverride}
             onEmergencyRoute={setEmergencyRoute}
             onClear={() => setEmergencyRoute([])}
@@ -1153,7 +1048,7 @@ export default function Page() {
             result={intel.scenario}
             loading={intel.loading}
             ready={!!navFrom && !!navTo}
-            simulationResult={simulationResult}
+            simulationResult={strongestEvent}
             eventDriven={eventDriven}
             closurePoints={closurePoints}
             onClosurePoints={(points) => {
@@ -1181,7 +1076,13 @@ export default function Page() {
 
           <EventSchedulerPanel
             eventPin={eventPin}
-            onEventPin={setEventPin}
+            onEventPin={(pin) => {
+              // Moving the selected pin (e.g. picking a place) drops the event simulated at its old spot.
+              if (eventPin && (!pin || eventKey(pin.lat, pin.lng) !== eventKey(eventPin.lat, eventPin.lng))) {
+                removeEventAt(eventPin.lat, eventPin.lng)
+              }
+              setEventPin(pin)
+            }}
             routes={nav.routes.map((route) => ({
               id: route.id,
               label: route.label,
@@ -1189,143 +1090,25 @@ export default function Page() {
               durationSeconds: route.durationSeconds,
               latLngs: route.latLngs,
             }))}
-            onSimulationResult={setSimulationResult}
+            onSimulationResult={commitSimulation}
+            onClearEvent={() => {
+              if (eventPin) removeEventAt(eventPin.lat, eventPin.lng)
+            }}
+            eventCount={events.length}
+            maxEvents={MAX_EVENTS}
           />
-          <ImpactDashboard result={simulationResult} />
+          <ImpactDashboard result={displayResult} />
+
+          <OrganizerPlanPanel event={strongestEvent?.event ?? null} onOverlay={setPlanOverlay} />
 
           {/* 6. Live city metrics */}
-          <MetricsDashboard metrics={cityMetrics} avgTravelMin={avgTravelMin} />
+          <MetricsDashboard metrics={routeMetrics} />
         </div>
-=======
-        {/* view toggle */}
-        <div className="pointer-events-auto absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded-xl border border-border bg-card p-1 backdrop-blur-md">
-          {(
-            [
-              { id: "map", label: "Map" },
-              { id: "2d", label: "2D Holo" },
-              { id: "3d", label: "3D Holo" },
-            ] as { id: ViewMode; label: string }[]
-          ).map((v) => (
-            <button
-              key={v.id}
-              onClick={() => setView(v.id)}
-              className={`rounded-lg px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors ${
-                view === v.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* control panel */}
-      <aside className="max-h-[46vh] w-full overflow-y-auto border-t border-border bg-background p-5 md:h-screen md:max-h-screen md:w-96 md:border-l md:border-t-0">
-        {data ? (
-          <div className="flex flex-col gap-7">
-            {appMode === "directions" && (
-              <NavigationPanel
-                from={navFrom}
-                to={navTo}
-                onFrom={pickFrom}
-                onTo={pickTo}
-                mode={travelMode}
-                onMode={setTravelMode}
-                routes={nav.routes}
-                activeRouteId={activeRouteId}
-                onActiveRoute={setActiveNavId}
-                loading={nav.loading}
-                error={nav.error}
-                engine={nav.engine}
-                trafficNote={nav.trafficNote}
-                waypoints={navStops}
-                onWaypoints={setNavStops}
-                gpsStatus={geo.status}
-                gpsMessage={geo.message}
-                onUseMyLocation={useMyLocation}
-                navState={session.state}
-                onStartNav={() => {
-                  geo.startWatch()
-                  session.start()
-                }}
-              />
-            )}
-            {appMode === "directions" && (
-              <RouteIntelPanel
-                intel={intel.intel}
-                loading={intel.loading}
-                error={intel.error}
-                simulated={scenarioActive}
-                activeRouteId={activeRouteId}
-                onSelectRoute={setActiveNavId}
-              />
-            )}
-            {appMode === "directions" && (
-              <WhatIfPanel
-                scenario={intelScenario}
-                onScenario={setIntelScenario}
-                baseline={intel.baseline}
-                result={intel.scenario}
-                loading={intel.loading}
-                ready={!!navFrom && !!navTo}
-              />
-            )}
-            {appMode === "directions" && (
-              <PoiPanel
-                center={poiCenter}
-                centerLabel={geo.fix ? "my location" : navFrom?.label || place?.label?.split(",")[0]}
-                pois={pois}
-                onPois={setPois}
-                onDirections={poiDirections}
-                onAddStop={(p) => setNavStops((w) => [...w, p])}
-                onFocus={(p) => setFlyTo({ lat: p.lat, lng: p.lon, zoom: 16, nonce: Date.now() })}
-              />
-            )}
-            <GunturRoutePanel />
-            <MlStatus ml={data.ml} />
-            <MetricsDashboard metrics={data.metrics} avgTravelMin={data.avgTravelMin} />
-            <ScenarioPanel scenario={scenario} onScenario={setScenario} />
-            {scenario.type !== "none" && (
-              <ComparisonTable
-                baseMetrics={data.baseline.metrics}
-                scenMetrics={data.metrics}
-                baseAvgTravel={data.baseline.avgTravelMin}
-                scenAvgTravel={data.avgTravelMin}
-              />
-            )}
-            <ForecastStrip forecast={data.forecast} source={data.forecastSource} />
-            <ControlPanel
-              data={data}
-              weights={weights}
-              onWeights={setWeights}
-              selectedInviteeId={selected}
-              onSelect={setSelected}
-              areaNames={areaNames}
-            />
-          </div>
-        ) : (
-          <p className="font-mono text-xs text-muted-foreground">Loading event plan…</p>
-        )}
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
       </aside>
     </main>
   )
 }
 
-<<<<<<< HEAD
-=======
-// Rough urban-density estimate from the geocoder's place type. A city is
-// dense (slow, congested); a state/country is an average of mixed terrain.
-function areaDensityFor(kind: string): number {
-  const k = kind.toLowerCase()
-  if (["city", "town", "suburb", "neighbourhood", "borough", "municipality"].includes(k)) return 0.85
-  if (["village", "hamlet"].includes(k)) return 0.5
-  if (["state", "region", "province", "county", "administrative"].includes(k)) return 0.55
-  if (["country"].includes(k)) return 0.45
-  return 0.7
-}
-
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 function ViewLoading({ label }: { label: string }) {
   return (
     <div className="flex h-full w-full items-center justify-center bg-background">
@@ -1333,44 +1116,3 @@ function ViewLoading({ label }: { label: string }) {
     </div>
   )
 }
-<<<<<<< HEAD
-=======
-
-function MlStatus({ ml }: { ml: PlanResponse["ml"] }) {
-  const active = ml.eta || ml.congestion
-  return (
-    <section className="rounded-xl border border-border bg-card/50 p-3">
-      <div className="flex items-center justify-between">
-        <h2 className="font-mono text-xs uppercase tracking-widest text-primary">AI model engine</h2>
-        <span
-          className="rounded-full border px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider"
-          style={{
-            borderColor: active ? "#22d3ee" : "var(--color-border)",
-            color: active ? "#22d3ee" : "var(--color-muted-foreground)",
-          }}
-        >
-          {active ? "ONNX active" : "Heuristic"}
-        </span>
-      </div>
-      <div className="mt-2 grid grid-cols-2 gap-2 font-mono text-[10px] text-muted-foreground">
-        <span>ETA model: {ml.eta ? <span className="text-primary">loaded</span> : "fallback"}</span>
-        <span>Forecast model: {ml.congestion ? <span className="text-primary">loaded</span> : "fallback"}</span>
-        <span className="col-span-2">
-          Re-routed by AI:{" "}
-          <span className={ml.reroutedCount > 0 ? "text-primary" : ""}>
-            {ml.reroutedCount} {ml.reroutedCount === 1 ? "invitee" : "invitees"}
-          </span>{" "}
-          · density {ml.context.areaDensity.toFixed(2)}
-          {ml.context.rain > 0 && ` · rain ${ml.context.rain.toFixed(1)}`}
-        </span>
-      </div>
-      {!active && (
-        <p className="mt-2 text-[10px] text-pretty text-muted-foreground">
-          Train models in <span className="font-mono text-foreground">/ml</span> (see README) and drop the .onnx files
-          in <span className="font-mono text-foreground">/models</span> to activate AI predictions.
-        </p>
-      )}
-    </section>
-  )
-}
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975

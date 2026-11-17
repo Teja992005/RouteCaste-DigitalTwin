@@ -19,6 +19,8 @@ type IsochroneResult = {
   normal: Point[]
   affected: Point[]
   reachableCount: number
+  /** Points still reachable in the time limit with the event running. */
+  affectedCount?: number
   totalPoints: number
 }
 
@@ -112,10 +114,16 @@ export function IsochronePanel({ origin, mode, simulationResult, onIsochrone, on
               <p className="font-mono text-[10px] text-foreground">
                 Reachable: {result.reachableCount} of {result.totalPoints} points within {timeLimitMinutes} min
               </p>
-              {simulationResult && result.affected.length > 0 && (
-                <p className="mt-1 text-[10px] leading-snug text-amber-300">
-                  ⚠ Event reduces reachable area — congestion near {simulationResult.event.name} limits travel.
-                </p>
+              {simulationResult && result.affected.length > 0 && typeof result.affectedCount === "number" && (
+                result.affectedCount < result.reachableCount ? (
+                  <p className="mt-1 text-[10px] leading-snug text-amber-300">
+                    ⚠ With the event: {result.affectedCount} of {result.totalPoints} points ({result.reachableCount - result.affectedCount} fewer) — congestion near {simulationResult.event.name} limits travel.
+                  </p>
+                ) : (
+                  <p className="mt-1 text-[10px] leading-snug text-green-400">
+                    ✓ With the event: still {result.affectedCount} of {result.totalPoints} points — no loss of reach at this time limit.
+                  </p>
+                )
               )}
               <button
                 type="button"

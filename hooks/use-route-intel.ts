@@ -1,10 +1,7 @@
 "use client"
 
 import useSWR from "swr"
-<<<<<<< HEAD
 import { useEffect, useState } from "react"
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 import type { NavPoint, TravelMode } from "@/hooks/use-navigation-route"
 
 export type IntelScenarioType = "none" | "closure" | "accident" | "traffic" | "rain" | "flood"
@@ -70,11 +67,7 @@ export type Intel = {
 export type IntelResponse = {
   engine: string
   mode: TravelMode
-<<<<<<< HEAD
   routes: { id: string; label: string; distanceMeters: number; durationSeconds: number; latLngs: [number, number][] }[]
-=======
-  routes: { id: string; label: string; distance_meters: number; duration_seconds: number; latLngs: [number, number][] }[]
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   baseline: Intel
   scenario: {
     type: IntelScenarioType
@@ -115,7 +108,6 @@ export function useRouteIntel(
   mode: TravelMode,
   waypoints: NavPoint[],
   scenario: { type: IntelScenarioType; intensity: number },
-<<<<<<< HEAD
   timeOverride: number | null,
   eventIncidentLocation: { lat: number; lon: number } | null,
 ) {
@@ -126,9 +118,6 @@ export function useRouteIntel(
     return () => clearTimeout(timer)
   }, [timeOverride])
 
-=======
-) {
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   const key =
     origin && destination
       ? `intel:${JSON.stringify({
@@ -137,11 +126,8 @@ export function useRouteIntel(
           waypoints: waypoints.map((w) => ({ lat: w.lat, lon: w.lon })),
           mode,
           scenario,
-<<<<<<< HEAD
           ...(debouncedTimeOverride === null ? {} : { hourOverride: debouncedTimeOverride }),
           ...(eventIncidentLocation ? { eventIncidentLocation } : {}),
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
         })}`
       : null
 

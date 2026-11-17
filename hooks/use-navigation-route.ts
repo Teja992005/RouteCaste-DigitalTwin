@@ -1,10 +1,7 @@
 "use client"
 
 import useSWR from "swr"
-<<<<<<< HEAD
 import { useCallback, useEffect, useState } from "react"
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
 export type NavPoint = { lat: number; lon: number; label?: string }
 export type TravelMode = "driving" | "walking" | "cycling"
@@ -21,13 +18,8 @@ export type NavStep = {
 export type NavRoute = {
   id: string
   label: string
-<<<<<<< HEAD
   distanceMeters: number
   durationSeconds: number
-=======
-  distance_meters: number
-  duration_seconds: number
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   summary: string
   latLngs: [number, number][]
   steps: NavStep[]
@@ -41,7 +33,6 @@ export type NavResponse = {
   traffic: { source: string; note: string }
 }
 
-<<<<<<< HEAD
 export type NavigationError = {
   message: string
   code: "timeout" | "rate_limited" | "no_route" | "unknown"
@@ -133,18 +124,6 @@ async function postRoute(key: string): Promise<NavResponse> {
   } finally {
     clearTimeout(timeout)
   }
-=======
-async function postRoute(key: string): Promise<NavResponse> {
-  const { origin, destination, waypoints, mode } = JSON.parse(key.replace(/^nav:/, ""))
-  const res = await fetch("/api/navigation/route", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ origin, destination, waypoints, mode, alternatives: true }),
-  })
-  const body = await res.json()
-  if (!res.ok) throw new Error(body?.error || "Routing failed")
-  return body as NavResponse
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 }
 
 /** Fetches real routes whenever origin, destination, waypoints or mode change. */
@@ -164,16 +143,11 @@ export function useNavigationRoute(
         })}`
       : null
 
-<<<<<<< HEAD
   const { data, error, isLoading, mutate } = useSWR<NavResponse>(key, postRoute, {
-=======
-  const { data, error, isLoading } = useSWR<NavResponse>(key, postRoute, {
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
     revalidateOnFocus: false,
     shouldRetryOnError: false,
   })
 
-<<<<<<< HEAD
   const [navError, setNavError] = useState<NavigationError | null>(null)
   useEffect(() => {
     setNavError(null)
@@ -201,20 +175,14 @@ export function useNavigationRoute(
     : null
   const isFromCache = data?.traffic?.source === "cache"
 
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   return {
     routes: data?.routes ?? [],
     engine: data?.engine,
     trafficNote: data?.traffic?.note,
     loading: isLoading,
-<<<<<<< HEAD
     error: errorWithActions,
     isFromCache,
     retry: triggerRoute,
     clearError,
-=======
-    error: error ? (error as Error).message : null,
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   }
 }

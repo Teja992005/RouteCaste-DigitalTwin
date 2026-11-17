@@ -15,7 +15,7 @@ type TableResponse = {
 }
 
 function emptyResult() {
-  return { normal: [] as LatLng[], affected: [] as LatLng[], reachableCount: 0, totalPoints: 120 }
+  return { normal: [] as LatLng[], affected: [] as LatLng[], reachableCount: 0, affectedCount: 0, totalPoints: 120 }
 }
 
 function inRange(value: unknown, minimum: number, maximum: number): value is number {
@@ -157,6 +157,7 @@ export async function POST(request: Request) {
       normal: convexHull(normalPoints),
       affected: hasEvent ? convexHull(affectedPoints) : [],
       reachableCount: normalPoints.length,
+      affectedCount: hasEvent ? affectedPoints.length : normalPoints.length,
       totalPoints: destinations.length,
     })
   } catch {

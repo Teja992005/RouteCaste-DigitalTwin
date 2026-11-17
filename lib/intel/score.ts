@@ -12,7 +12,6 @@
 // wired into this project, and the response says so explicitly.
 // ---------------------------------------------------------------------------
 
-<<<<<<< HEAD
 import {
   predictCongestion,
   predictEta,
@@ -21,9 +20,6 @@ import {
   type EtaModelInput,
   type CongestionModelInput,
 } from "@/lib/ml"
-=======
-import { predictCongestion, predictEta, modelStatus, type PredictContext } from "@/lib/ml"
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 import { analyseRoute, isRouteBlocked, SEVERITY_WEIGHT, type Incident, type RouteImpact } from "@/lib/intel/incidents"
 import { rainFeature, type WeatherIntel } from "@/lib/intel/weather"
 import type { LL } from "@/lib/nav/progress"
@@ -35,13 +31,10 @@ export type ScorableRoute = {
   durationSeconds: number
   latLngs: LL[]
   stepCount: number
-<<<<<<< HEAD
   /** Present only when built from complete training-compatible source data. */
   etaModelInput?: EtaModelInput
   /** Present only when built from complete training-compatible source data. */
   congestionModelInput?: CongestionModelInput
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 }
 
 export type Band = "low" | "medium" | "high" | "very high"
@@ -144,16 +137,11 @@ export async function scoreRoutes(opts: ScoreOptions): Promise<IntelResult> {
 
     const ctx: PredictContext = { hour, isWeekend, areaDensity, scenarioSeverity, rain }
 
-<<<<<<< HEAD
-=======
-    // --- predicted congestion for this corridor -----------------------------
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
     const prior = timeOfDayCongestion(hour, isWeekend)
     const incidentLoad = clamp01(
       impacts.reduce((a, i) => a + SEVERITY_WEIGHT[i.incident.severity], 0) / 2 + (blocked ? 0.4 : 0),
     )
     const heuristicCongestion = clamp01(prior + incidentLoad * 0.35 + surge * 0.45 + weather.impact * 0.18)
-<<<<<<< HEAD
     // OSRM route summaries do not include road-level speed/capacity or the
     // trained event-load fields. Use ML only when a caller supplies the full
     // source-derived feature contract; otherwise preserve the heuristic.
@@ -162,17 +150,6 @@ export async function scoreRoutes(opts: ScoreOptions): Promise<IntelResult> {
     // Surge and incident penalties are applied on top of the model output so
     // a simulation always affects the score even when a model is loaded.
     const trafficLevel = clamp01(Math.max(cong.score, prior) + surge * 0.45 + incidentLoad * 0.2)
-=======
-    const cong = await predictCongestion(
-      { current: prior, step: 1, incidentLoad },
-      ctx,
-      heuristicCongestion,
-    )
-    if (cong.source === "model") modelSource = "model"
-    // A surge/incident is applied on top of the model output too, otherwise a
-    // simulation would have no effect whenever a model happens to be loaded.
-    const trafficLevel = clamp01(Math.max(cong.value, prior) + surge * 0.45 + incidentLoad * 0.2)
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
     // --- ETA ---------------------------------------------------------------
     const baseEtaMin = r.durationSeconds / 60
@@ -181,19 +158,9 @@ export async function scoreRoutes(opts: ScoreOptions): Promise<IntelResult> {
     const incidentDelayMin = impacts.reduce((a, i) => a + i.delaySeconds, 0) / 60
     const heuristicEta = baseEtaMin * congestionPenalty * weatherPenalty + incidentDelayMin
 
-<<<<<<< HEAD
     const eta = await predictEta(r.etaModelInput ?? null, ctx, heuristicEta)
     if (eta.source === "model") modelSource = "model"
     const adjustedEtaMin = Math.max(baseEtaMin, eta.etaMin)
-=======
-    const eta = await predictEta(
-      { distanceKm: r.distanceMeters / 1000, avgCongestion: trafficLevel, numSegments: r.stepCount },
-      ctx,
-      heuristicEta,
-    )
-    if (eta.source === "model") modelSource = "model"
-    const adjustedEtaMin = Math.max(baseEtaMin, eta.value)
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
     // --- risk --------------------------------------------------------------
     const incidentRisk = clamp01(impacts.reduce((a, i) => a + SEVERITY_WEIGHT[i.incident.severity] * 0.6, 0))

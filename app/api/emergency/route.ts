@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { decodePolyline } from "@/lib/geo/routing"
+import { routeOnGraph } from "@/lib/guntur-graph"
 
 type EmergencyRequest = {
   originLat?: unknown
@@ -86,58 +87,79 @@ async function handlePost(request: Request) {
     ? Math.min(23 + 59 / 60, requestedHour)
     : now.getHours() + now.getMinutes() / 60
   const multiplier = trafficMultiplier(hour)
-  const baseUrl = (process.env.ROUTING_URL || "https://router.project-osrm.org").replace(/\/$/, "")
-  const coords = `${originLng},${originLat};${destLng},${destLat}`
-  const url = `${baseUrl}/route/v1/driving/${coords}?overview=full&geometries=polyline&steps=false&alternatives=false`
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 12_000)
+  type Found = { distance: number; duration: number; latLngs: [number, number][]; summary: string; degraded: boolean }
 
-  try {
-    const response = await fetch(url, { signal: controller.signal, headers: { Accept: "application/json" } })
-    if (!response.ok) return failure("Routing service unavailable", 500)
-    let data: { code?: string; message?: string; routes?: { distance?: number; duration?: number; geometry?: string; legs?: { summary?: string }[] }[] }
+  async function viaOsrm(): Promise<Found | null> {
+    const baseUrl = (process.env.ROUTING_URL || "https://router.project-osrm.org").replace(/\/$/, "")
+    const coords = `${originLng},${originLat};${destLng},${destLat}`
+    const url = `${baseUrl}/route/v1/driving/${coords}?overview=full&geometries=polyline&steps=false&alternatives=false`
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8_000)
     try {
-      data = await response.json()
+      const response = await fetch(url, { signal: controller.signal, headers: { Accept: "application/json" } })
+      if (!response.ok) return null
+      const data = (await response.json()) as { code?: string; routes?: { distance?: number; duration?: number; geometry?: string; legs?: { summary?: string }[] }[] }
+      const route = data.code === "Ok" ? data.routes?.[0] : undefined
+      if (!route || !Number.isFinite(route.duration) || !Number.isFinite(route.distance) || !route.geometry) return null
+      const latLngs = decodePolyline(route.geometry)
+      if (latLngs.length < 2) return null
+      return {
+        distance: route.distance!,
+        duration: route.duration!,
+        latLngs,
+        summary: route.legs?.map((leg) => leg.summary).filter(Boolean).join(", ") || "Fastest OSRM driving route",
+        degraded: false,
+      }
     } catch {
-      return failure("Routing service returned an unexpected response", 500)
+      return null
+    } finally {
+      clearTimeout(timeout)
     }
-    const route = data.code === "Ok" ? data.routes?.[0] : undefined
-    if (!route || !Number.isFinite(route.duration) || !Number.isFinite(route.distance) || !route.geometry) {
-      return failure(data.message || "No emergency route available", 500)
-    }
-
-    const latLngs = decodePolyline(route.geometry)
-    if (latLngs.length < 2) return failure("Routing service returned invalid geometry", 500)
-
-    const baseEtaMin = route.duration! / 60
-    const normalEtaMin = baseEtaMin * multiplier
-    let eventFactor = 1
-    if (hasEvent) {
-      const midpoint = latLngs[Math.floor(latLngs.length / 2)]
-      const eventDistanceKm = haversineKm(midpoint, [body.eventLat as number, body.eventLng as number])
-      const proximity = Math.exp(-eventDistanceKm / 1.0)
-      eventFactor = Math.min(2.0, 1 + ((body.eventLoad as number) * proximity * 1.2))
-    }
-
-    const eventEtaMin = normalEtaMin * eventFactor
-    const delayMin = eventEtaMin - baseEtaMin
-    const degradationPct = baseEtaMin > 0 ? Math.round((delayMin / baseEtaMin) * 100) : 0
-    const verdict = degradation(degradationPct)
-
-    return NextResponse.json({
-      latLngs,
-      distanceMeters: route.distance,
-      baseEtaMin,
-      normalEtaMin,
-      eventEtaMin,
-      delayMin,
-      degradationPct,
-      ...verdict,
-      routeSummary: route.legs?.map((leg) => leg.summary).filter(Boolean).join(", ") || "Fastest OSRM driving route",
-    })
-  } catch {
-    return failure("Routing service unavailable", 500)
-  } finally {
-    clearTimeout(timeout)
   }
+
+  // Routing engine first; if it is down, the local Guntur road graph (free-flow, labelled degraded).
+  let found = await viaOsrm()
+  if (!found) {
+    const local = routeOnGraph({ lat: originLat as number, lon: originLng as number }, { lat: destLat as number, lon: destLng as number })
+    if (local && local.latLngs.length >= 2) {
+      found = {
+        distance: local.distanceM,
+        duration: local.durationSec,
+        latLngs: local.latLngs,
+        summary: Array.from(new Set(local.steps.map((step) => step.name).filter(Boolean))).slice(0, 3).join(", ") || "Local Guntur road graph",
+        degraded: true,
+      }
+    }
+  }
+  if (!found) return failure("Routing service unavailable", 500)
+
+  const baseEtaMin = found.duration / 60
+  const normalEtaMin = baseEtaMin * multiplier
+  let eventFactor = 1
+  if (hasEvent) {
+    const midpoint = found.latLngs[Math.floor(found.latLngs.length / 2)]
+    const eventDistanceKm = haversineKm(midpoint, [body.eventLat as number, body.eventLng as number])
+    const proximity = Math.exp(-eventDistanceKm / 1.0)
+    eventFactor = Math.min(2.0, 1 + ((body.eventLoad as number) * proximity * 1.2))
+  }
+
+  const eventEtaMin = normalEtaMin * eventFactor
+  // Event impact is measured against normal traffic at the same hour. Measuring
+  // against free-flow would count ordinary rush-hour traffic as event delay.
+  const delayMin = eventEtaMin - normalEtaMin
+  const degradationPct = normalEtaMin > 0 ? Math.round((delayMin / normalEtaMin) * 100) : 0
+  const verdict = degradation(degradationPct)
+
+  return NextResponse.json({
+    latLngs: found.latLngs,
+    distanceMeters: found.distance,
+    baseEtaMin,
+    normalEtaMin,
+    eventEtaMin,
+    delayMin,
+    degradationPct,
+    ...verdict,
+    routeSummary: found.summary,
+    degraded: found.degraded,
+  })
 }

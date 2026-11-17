@@ -14,6 +14,7 @@ type EmergencyResult = {
   eventEtaMin: number
   delayMin: number
   degradationPct: number
+  degraded?: boolean
   severity: Severity
   recommendation: string
   routeSummary: string
@@ -123,6 +124,7 @@ export function EmergencyPanel({ simulationResult, timeOverride, onEmergencyRout
       {result && (
         <div className="mt-3 space-y-2 border-t border-border/60 pt-3">
           <p className="font-mono text-[8px] uppercase tracking-widest text-amber-300">Simulated estimate · not live traffic data</p>
+          {result.degraded && <p className="font-mono text-[8px] uppercase tracking-widest text-amber-300">Routing service unavailable · local Guntur road graph, free-flow only</p>}
           <p className="text-[9px] text-muted-foreground">{result.routeSummary} · {(result.distanceMeters / 1000).toFixed(1)} km</p>
           <div className="grid grid-cols-2 gap-1.5">
             <Metric label="Base ETA" value={`${result.baseEtaMin.toFixed(1)} min`} />
@@ -130,7 +132,7 @@ export function EmergencyPanel({ simulationResult, timeOverride, onEmergencyRout
             {simulationResult ? (
               <>
                 <Metric label="Event ETA" value={`${result.eventEtaMin.toFixed(1)} min`} />
-                <Metric label="Delay" value={`+${result.delayMin.toFixed(1)} min`} valueClass={result.delayMin > 2 ? "text-red-400" : result.delayMin > 0 ? "text-yellow-300" : "text-green-400"} />
+                <Metric label="Event delay" value={`+${result.delayMin.toFixed(1)} min`} valueClass={result.delayMin > 2 ? "text-red-400" : result.delayMin > 0 ? "text-yellow-300" : "text-green-400"} />
               </>
             ) : (
               <p className="col-span-2 text-[10px] text-muted-foreground">Run an event simulation to see event impact.</p>
@@ -140,7 +142,7 @@ export function EmergencyPanel({ simulationResult, timeOverride, onEmergencyRout
           {simulationResult && severityStyle && (
             <>
               <div className={`rounded-lg border p-2 font-mono text-[10px] ${severityStyle.banner}`}>
-                {severityStyle.message} <span className="ml-1 text-[9px]">({result.degradationPct}% vs. base)</span>
+                {severityStyle.message} <span className="ml-1 text-[9px]">({result.degradationPct}% vs. normal traffic)</span>
               </div>
               <p className="text-[10px] italic leading-snug text-muted-foreground">{result.recommendation}</p>
             </>

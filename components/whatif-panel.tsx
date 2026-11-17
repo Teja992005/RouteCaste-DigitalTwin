@@ -1,14 +1,9 @@
 "use client"
 
-<<<<<<< HEAD
 import { useState } from "react"
 import { Building2, FlaskConical, TriangleAlert } from "lucide-react"
 import type { Intel, IntelResponse, IntelScenarioType } from "@/hooks/use-route-intel"
 import type { EventSimulationResponse } from "@/lib/types"
-=======
-import { FlaskConical, TriangleAlert } from "lucide-react"
-import type { Intel, IntelResponse, IntelScenarioType } from "@/hooks/use-route-intel"
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
 const SCENARIOS: { id: IntelScenarioType; label: string }[] = [
   { id: "none", label: "Normal" },
@@ -36,7 +31,6 @@ export function WhatIfPanel({
   result,
   loading,
   ready,
-<<<<<<< HEAD
   simulationResult,
   onClosurePoints,
   closurePoints,
@@ -44,8 +38,6 @@ export function WhatIfPanel({
   scenarioPin,
   onPlacePin,
   onClearPin,
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 }: {
   scenario: { type: IntelScenarioType; intensity: number }
   onScenario: (s: { type: IntelScenarioType; intensity: number }) => void
@@ -53,7 +45,6 @@ export function WhatIfPanel({
   result: IntelResponse["scenario"]
   loading: boolean
   ready: boolean
-<<<<<<< HEAD
   simulationResult?: EventSimulationResponse | null
   onClosurePoints?: (points: [{ lat: number; lng: number }, { lat: number; lng: number }] | null) => void
   closurePoints?: [{ lat: number; lng: number }, { lat: number; lng: number }] | null
@@ -63,9 +54,6 @@ export function WhatIfPanel({
   onClearPin?: () => void
 }) {
   const [tab, setTab] = useState<"citizen" | "planner">("citizen")
-=======
-}) {
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   const baseTop = baseline?.scores.find((s) => s.id === baseline?.recommendation?.routeId) ?? baseline?.scores[0]
   const scenTop = result?.intel.scores.find((s) => s.id === result?.intel.recommendation?.routeId) ?? result?.intel.scores[0]
   const switched = !!baseTop && !!scenTop && baseTop.label !== scenTop.label
@@ -73,7 +61,6 @@ export function WhatIfPanel({
   return (
     <section className="rounded-xl border border-border bg-card/50 p-3">
       <div className="flex items-center justify-between gap-2">
-<<<<<<< HEAD
         <div className="flex gap-1">
           {(["citizen", "planner"] as const).map((t) => (
             <button
@@ -94,14 +81,6 @@ export function WhatIfPanel({
 
       {tab === "citizen" && (
         <>
-=======
-        <h2 className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-primary">
-          <FlaskConical className="h-3.5 w-3.5" aria-hidden /> Route what-if
-        </h2>
-        {loading && <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">running…</span>}
-      </div>
-
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
       <p className="mt-1 text-[10px] leading-snug text-pretty text-muted-foreground">
         Applies to your real A→B road route — blocked plans are re-routed by the routing engine.
       </p>
@@ -112,7 +91,6 @@ export function WhatIfPanel({
         </p>
       )}
 
-<<<<<<< HEAD
       {eventDriven && (
         <div className="mt-2 rounded-lg border border-primary/40 bg-primary/5 p-2 font-mono text-[10px] text-primary">
           <p>🎪 Event-driven rerouting active</p>
@@ -120,8 +98,6 @@ export function WhatIfPanel({
         </div>
       )}
 
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
       <fieldset className="mt-2.5" disabled={!ready}>
         <legend className="sr-only">Scenario</legend>
         <div className="grid grid-cols-3 gap-1">
@@ -172,7 +148,6 @@ export function WhatIfPanel({
         </div>
       )}
 
-<<<<<<< HEAD
       {scenario.type !== "none" && scenario.type !== "closure" && (
         <div className="mt-2.5">
           {scenarioPin ? (
@@ -201,8 +176,6 @@ export function WhatIfPanel({
         </div>
       )}
 
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
       {result && scenTop && baseTop && (
         <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/5 p-2.5">
           <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-destructive">
@@ -269,7 +242,6 @@ export function WhatIfPanel({
           <p className="mt-1.5 text-[9px] text-pretty leading-relaxed text-muted-foreground">{result.note}</p>
         </div>
       )}
-<<<<<<< HEAD
         </>
       )}
 
@@ -280,8 +252,6 @@ export function WhatIfPanel({
           closurePoints={closurePoints}
         />
       )}
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
     </section>
   )
 }
@@ -294,7 +264,6 @@ function Row({ label, value, danger = false }: { label: string; value: string; d
     </div>
   )
 }
-<<<<<<< HEAD
 
 function haversineM(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const radius = 6371000
@@ -388,5 +357,3 @@ function PlannerTab({
     </div>
   )
 }
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975

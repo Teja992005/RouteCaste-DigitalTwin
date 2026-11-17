@@ -54,13 +54,8 @@ function serialise(routes: { route: EngineRoute; label: string }[]) {
   return routes.map(({ route, label }) => ({
     id: route.id,
     label,
-<<<<<<< HEAD
     distanceMeters: route.distanceMeters,
     durationSeconds: route.durationSeconds,
-=======
-    distance_meters: route.distanceMeters,
-    duration_seconds: route.durationSeconds,
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
     summary: route.summary,
     latLngs: route.latLngs,
     steps: route.steps,
@@ -115,11 +110,8 @@ const SCENARIO_SPEC: Record<
   accident: { incident: { type: "accident", severity: "high", radius: 500 }, surge: 0.25, label: "Accident" },
   traffic: { surge: 1, label: "Traffic surge" },
   rain: { incident: { type: "weather", severity: "medium", radius: 6000 }, surge: 0.3, label: "Heavy rain" },
-<<<<<<< HEAD
   // This is a simulated point-based flood closure, not an elevation or waterway observation.
   // Real flood extents and road elevations would be needed to identify low-lying roads.
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   flood: { incident: { type: "flooding", severity: "critical", radius: 1200 }, surge: 0.35, label: "Flood" },
 }
 
@@ -136,11 +128,8 @@ export async function POST(req: Request) {
     destination?: unknown
     waypoints?: unknown[]
     mode?: string
-<<<<<<< HEAD
     hourOverride?: unknown
     eventIncidentLocation?: unknown
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
     scenario?: { type?: string; intensity?: number; at?: unknown }
   }
 
@@ -151,7 +140,6 @@ export async function POST(req: Request) {
   }
   const waypoints = Array.isArray(b.waypoints) ? b.waypoints.map(coord).filter((p): p is LonLat => p !== null) : []
   const mode = (MODES as string[]).includes(String(b.mode)) ? (b.mode as TravelMode) : "driving"
-<<<<<<< HEAD
   const scoringNow = new Date()
   if (typeof b.hourOverride === "number" && Number.isFinite(b.hourOverride) && b.hourOverride >= 0 && b.hourOverride <= 24) {
     const totalMinutes = Math.min(23 * 60 + 59, Math.round(b.hourOverride * 60))
@@ -162,12 +150,6 @@ export async function POST(req: Request) {
   const scenarioType: ScenarioType = rawType in SCENARIO_SPEC || rawType === "none" ? rawType : "none"
   const rawIntensity = Number(b.scenario?.intensity ?? 0.6)
   const intensity = Number.isFinite(rawIntensity) ? Math.max(0, Math.min(1, rawIntensity)) : 0.6
-=======
-
-  const rawType = String(b.scenario?.type ?? "none") as ScenarioType
-  const scenarioType: ScenarioType = rawType in SCENARIO_SPEC || rawType === "none" ? rawType : "none"
-  const intensity = Math.max(0, Math.min(1, Number(b.scenario?.intensity ?? 0.6) || 0.6))
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
   try {
     // ---- 1. real routing -------------------------------------------------
@@ -188,11 +170,7 @@ export async function POST(req: Request) {
     const reported = listIncidents({ activeOnly: true })
 
     // ---- 4. baseline intelligence (no scenario applied) ------------------
-<<<<<<< HEAD
     const baseline = await scoreRoutes({ routes: baseScorable, incidents: reported, weather, now: scoringNow })
-=======
-    const baseline = await scoreRoutes({ routes: baseScorable, incidents: reported, weather })
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
     if (scenarioType === "none") {
       return NextResponse.json({
@@ -203,13 +181,13 @@ export async function POST(req: Request) {
         scenario: null,
         incidents: reported,
         duration_estimated: base.durationEstimated === true,
+        degraded: base.degraded ?? null,
       })
     }
 
     // ---- 5. apply the scenario ------------------------------------------
     const spec = SCENARIO_SPEC[scenarioType as Exclude<ScenarioType, "none">]
     const strikeAt = coord(b.scenario?.at)
-<<<<<<< HEAD
     const eventLocation = coord(b.eventIncidentLocation)
     const eventIncidentActive = !!eventLocation && (
       scenarioType === "accident" || (scenarioType === "traffic" && intensity > 0)
@@ -240,20 +218,6 @@ export async function POST(req: Request) {
           description: eventIncidentActive
             ? `SIMULATED ${spec.label.toLowerCase()} near event location`
             : `SIMULATED ${spec.label.toLowerCase()} (what-if scenario)`,
-=======
-    const at: LL = strikeAt ? [strikeAt.lat, strikeAt.lon] : pointAlong(primaryLine, 0.45)
-
-    const simulated: Incident[] = []
-    if (spec.incident) {
-      simulated.push(
-        createIncident({
-          type: spec.incident.type,
-          lat: at[0],
-          lon: at[1],
-          severity: spec.incident.severity,
-          radiusMeters: Math.round(spec.incident.radius * (0.6 + intensity * 0.8)),
-          description: `SIMULATED ${spec.label.toLowerCase()} (what-if scenario)`,
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
           origin: "simulated",
         }),
       )
@@ -272,10 +236,7 @@ export async function POST(req: Request) {
       weather,
       trafficSurge: surge,
       scenarioSeverity: intensity,
-<<<<<<< HEAD
       now: scoringNow,
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
     })
 
     const everyRouteBlocked = scenarioIntel.scores.length > 0 && scenarioIntel.scores.every((s) => s.blocked)
@@ -300,10 +261,7 @@ export async function POST(req: Request) {
             weather,
             trafficSurge: surge,
             scenarioSeverity: intensity,
-<<<<<<< HEAD
             now: scoringNow,
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
           })
           // Accept the detour only if it actually clears the blockage AND is
           // physically plausible. A forced detour around a closure cannot be
@@ -373,6 +331,7 @@ export async function POST(req: Request) {
       },
       incidents: allIncidents,
       duration_estimated: base.durationEstimated === true,
+      degraded: base.degraded ?? null,
     })
   } catch (err) {
     const e = err as RoutingError

@@ -123,11 +123,7 @@ export function NavHud({
         <div className="px-3 py-4 text-center">
           <p className="font-mono text-sm uppercase tracking-widest text-primary">You have arrived</p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-<<<<<<< HEAD
             {fmtDistance(route.distanceMeters)} travelled · tracking stopped
-=======
-            {fmtDistance(route.distance_meters)} travelled · tracking stopped
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
           </p>
         </div>
       ) : (
@@ -161,17 +157,10 @@ export function NavHud({
         </div>
         <div className="mt-1.5 flex items-center justify-between gap-2 font-mono text-[10px] text-muted-foreground">
           <span className="text-foreground">
-<<<<<<< HEAD
             {fmtDistance(progress?.remainingMeters ?? route.distanceMeters)} left
           </span>
           <span className="text-primary">{fmtDuration(progress?.remainingSeconds ?? route.durationSeconds)}</span>
           <span>ETA {etaClock(progress?.remainingSeconds ?? route.durationSeconds)}</span>
-=======
-            {fmtDistance(progress?.remainingMeters ?? route.distance_meters)} left
-          </span>
-          <span className="text-primary">{fmtDuration(progress?.remainingSeconds ?? route.duration_seconds)}</span>
-          <span>ETA {etaClock(progress?.remainingSeconds ?? route.duration_seconds)}</span>
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
           {progress && !arrived && (
             <span className="shrink-0 text-[9px]">
               {progress.stepIndex + 1}/{route.steps.length}

@@ -1,3 +1,5 @@
+import { offlineRoute } from "@/lib/geo/offline"
+
 // Routing engine abstraction. OSRM is the default implementation; the
 // RoutingEngine interface lets GraphHopper/Valhalla be added later without
 // changing API routes or the frontend.
@@ -41,6 +43,11 @@ export type RouteResult = {
    * durations were re-timed from the real road distance instead.
    */
   durationEstimated?: boolean
+  /**
+   * Set when the primary engine failed and the route came from an offline
+   * fallback instead. States what was used and why, for the UI and API.
+   */
+  degraded?: string
 }
 
 /** Typical door-to-door speeds (km/h) used only when a profile is missing. */
@@ -271,8 +278,56 @@ export class OsrmEngine implements RoutingEngine {
   }
 }
 
+type RouteInput = Parameters<RoutingEngine["route"]>[0]
+type OfflineRouter = (input: RouteInput) => EngineRoute | null
+
+/** Errors worth retrying or falling back on: timeouts, upstream 5xx and rate limits, not bad input. */
+export function isTransient(err: unknown): boolean {
+  return err instanceof RoutingError ? err.status === 429 || err.status >= 500 : true
+}
+
+/**
+ * Wraps a primary engine with one retry on transient failures and an offline
+ * fallback. Input errors (400) and "no route" (404) are never masked.
+ */
+export class ResilientEngine implements RoutingEngine {
+  readonly name: string
+  constructor(
+    private readonly primary: RoutingEngine,
+    private readonly offline: OfflineRouter,
+    private readonly retryDelayMs = 600,
+  ) {
+    this.name = primary.name
+  }
+
+  async route(input: RouteInput): Promise<RouteResult> {
+    let failure: unknown
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        return await this.primary.route(input)
+      } catch (err) {
+        failure = err
+        if (!isTransient(err)) throw err
+        if (attempt === 0 && this.retryDelayMs > 0) await new Promise((r) => setTimeout(r, this.retryDelayMs))
+      }
+    }
+    const fallback = this.offline(input)
+    if (!fallback) throw failure
+    const reason = failure instanceof Error ? failure.message : "routing engine unavailable"
+    return {
+      engine: "guntur-graph (offline fallback)",
+      mode: input.mode,
+      routes: [fallback],
+      durationEstimated: input.mode !== "driving",
+      degraded: `Live routing failed (${reason}). Route computed on the local OpenStreetMap-based Guntur road graph at free-flow speed; no turn-by-turn maneuvers.`,
+    }
+  }
+}
+
 /** Active engine (swap here to change providers project-wide). */
-export const routingEngine: RoutingEngine = new OsrmEngine()
+export const routingEngine: RoutingEngine = new ResilientEngine(new OsrmEngine(), (input) =>
+  offlineRoute(input.origin, input.destination, input.waypoints ?? [], input.mode),
+)
 
 /** Label routes by their real engine numbers: fastest / shortest / alternative. */
 export function labelRoutes(routes: EngineRoute[]): { route: EngineRoute; label: string }[] {

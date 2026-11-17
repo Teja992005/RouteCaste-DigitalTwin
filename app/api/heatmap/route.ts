@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { gunturEventSegments } from "@/lib/guntur-graph"
 
 type OverpassWay = {
   id: number
@@ -38,14 +39,22 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
 }
 
 export async function POST(request: Request) {
-  let body: { lat?: unknown; lng?: unknown; impactRadiusMeters?: unknown; eventLoad?: unknown; hourOverride?: unknown }
+  let body: {
+    lat?: unknown
+    lng?: unknown
+    impactRadiusMeters?: unknown
+    eventLoad?: unknown
+    hourOverride?: unknown
+    attendance?: unknown
+    eventPhase?: unknown
+  }
   try {
     body = await request.json()
   } catch {
     return NextResponse.json({ segments: [] })
   }
 
-  const { lat, lng, impactRadiusMeters, eventLoad, hourOverride } = body
+  const { lat, lng, impactRadiusMeters, eventLoad, hourOverride, attendance, eventPhase } = body
   if (
     !isFiniteNumber(lat) || lat < -90 || lat > 90 ||
     !isFiniteNumber(lng) || lng < -180 || lng > 180 ||
@@ -62,6 +71,30 @@ export async function POST(request: Request) {
     hour = Math.min(23 + 59 / 60, hourOverride)
   }
   const isWeekend = now.getDay() === 0 || now.getDay() === 6
+
+  // Preferred path: the real Guntur road graph (offline, directed roads). Event
+  // vehicles are routed from the city zones to the venue and combined with the
+  // baseline through BPR. Falls back to the Overpass estimate below when the
+  // venue is outside the graph, the dataset is missing, or attendance is absent.
+  if (isFiniteNumber(attendance) && attendance > 0) {
+    const phase = isFiniteNumber(eventPhase) ? Math.max(0, Math.min(1, eventPhase)) : 1
+    const graphResult = gunturEventSegments({ lat, lng, attendance, phase, hour, weekend: isWeekend, radiusM: radiusMeters })
+    if (graphResult) {
+      const round = (v: number) => Math.round(v * 1e5) / 1e5
+      return NextResponse.json({
+        source: "guntur-graph",
+        note: "Modeled: OpenStreetMap roads, event vehicles routed over the directed graph, BPR travel times. Not measured traffic.",
+        segments: graphResult.segments.map((segment) => ({
+          points: segment.points.map(([a, b]): [number, number] => [round(a), round(b)]),
+          congestion: segment.congestion,
+          highway: segment.highway,
+          baseCongestion: Math.round(segment.baseCongestion * 100) / 100,
+          delaySec: Math.round(segment.delaySec * 10) / 10,
+        })),
+      })
+    }
+  }
+
   const timePrior = timeOfDayCongestion(hour, isWeekend)
   const deltaLat = Math.min(0.02, radiusMeters / 111_000)
   const longitudeScale = Math.max(0.01, Math.cos((lat * Math.PI) / 180))
@@ -98,7 +131,7 @@ export async function POST(request: Request) {
         highway: way.tags?.highway ?? "unclassified",
       }]
     })
-    return NextResponse.json({ segments })
+    return NextResponse.json({ source: "overpass-estimate", segments })
   } catch {
     return NextResponse.json({ segments: [] })
   } finally {

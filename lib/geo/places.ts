@@ -4,6 +4,7 @@
 // degrades instead of failing.
 
 import { GeoError } from "@/lib/geo/geocoder"
+import { offlinePois } from "@/lib/geo/offline"
 
 const OVERPASS_URL = process.env.OVERPASS_URL || "https://overpass-api.de/api/interpreter"
 const GEOCODING_URL = process.env.GEOCODING_URL || "https://nominatim.openstreetmap.org"
@@ -77,7 +78,7 @@ function addressFrom(t: Record<string, string>): string | undefined {
 
 async function overpass(category: string, lat: number, lon: number, radius: number, limit: number): Promise<Poi[]> {
   const cat = CATEGORIES[category]
-  const body = `[out:json][timeout:20];(${cat.filters
+  const body = `[out:json][timeout:8];(${cat.filters
     .flatMap((f) => {
       const [k, v] = f.split("=")
       return [
@@ -88,7 +89,7 @@ async function overpass(category: string, lat: number, lon: number, radius: numb
     .join("")});out center ${Math.min(limit * 3, 90)};`
 
   const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), 22000)
+  const timer = setTimeout(() => ctrl.abort(), 9000)
   try {
     const res = await fetch(OVERPASS_URL, {
       method: "POST",
@@ -136,7 +137,10 @@ async function nominatimNearby(category: string, lat: number, lon: number, radiu
   const url =
     `${GEOCODING_URL}/search?format=jsonv2&addressdetails=1&limit=${limit}&bounded=1` +
     `&viewbox=${viewbox}&q=${encodeURIComponent(cat.keyword)}`
-  const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": UA } })
+  const res = await fetch(url, {
+    headers: { Accept: "application/json", "User-Agent": UA },
+    signal: AbortSignal.timeout(8000),
+  })
   if (!res.ok) throw new GeoError(`geocoder responded ${res.status}`, 502)
   const rows = (await res.json()) as { place_id?: number; display_name: string; name?: string; lat: string; lon: string }[]
   if (!Array.isArray(rows)) return []
@@ -160,7 +164,7 @@ async function nominatimNearby(category: string, lat: number, lon: number, radiu
     .sort((a, b) => a.distanceMeters - b.distanceMeters)
 }
 
-export type PoiResult = { source: "overpass" | "nominatim"; pois: Poi[] }
+export type PoiResult = { source: "overpass" | "nominatim" | "local-guntur"; pois: Poi[] }
 
 /** Nearby POIs of one category, real OSM data only. */
 export async function findNearbyPois(
@@ -178,5 +182,12 @@ export async function findNearbyPois(
   } catch {
     // fall through to the geocoder
   }
-  return { source: "nominatim", pois: await nominatimNearby(category, lat, lon, radius, limit) }
+  try {
+    return { source: "nominatim", pois: await nominatimNearby(category, lat, lon, radius, limit) }
+  } catch (err) {
+    // Both public services failed: use the local Guntur landmark list if it covers this category.
+    const local = offlinePois(category, CATEGORIES[category].label, lat, lon, radius, limit)
+    if (local.length > 0) return { source: "local-guntur", pois: local }
+    throw err
+  }
 }

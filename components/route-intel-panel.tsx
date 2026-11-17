@@ -20,10 +20,7 @@ export function RouteIntelPanel({
   loading,
   error,
   simulated,
-<<<<<<< HEAD
   eventDriven = false,
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   onSelectRoute,
   activeRouteId,
 }: {
@@ -31,10 +28,7 @@ export function RouteIntelPanel({
   loading: boolean
   error: string | null
   simulated: boolean
-<<<<<<< HEAD
   eventDriven?: boolean
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   onSelectRoute?: (id: string) => void
   activeRouteId?: string | null
 }) {
@@ -66,12 +60,9 @@ export function RouteIntelPanel({
 
   const rec = intel.recommendation
   const top = intel.scores.find((s) => s.id === rec?.routeId) ?? intel.scores[0]
-<<<<<<< HEAD
   const topTouchesEvent = !!top?.impacts.some(
     (impact) => impact.incident.origin === "simulated" && impact.incident.type === "obstruction",
   )
-=======
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
   return (
     <section className="rounded-xl border border-border bg-card/50 p-3">
@@ -109,7 +100,6 @@ export function RouteIntelPanel({
               <span className="text-[9px] text-muted-foreground">/100</span>
             </span>
           </div>
-<<<<<<< HEAD
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <p className="font-mono text-sm font-semibold text-foreground">{rec.label}</p>
             {eventDriven && !topTouchesEvent && (
@@ -118,9 +108,6 @@ export function RouteIntelPanel({
               </span>
             )}
           </div>
-=======
-          <p className="mt-1 font-mono text-sm font-semibold text-foreground">{rec.label}</p>
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
 
           <dl className="mt-2 grid grid-cols-3 gap-2 font-mono text-[10px]">
             <Stat label="ETA" value={`${Math.round(top.adjustedEtaMin)} min`} />

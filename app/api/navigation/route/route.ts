@@ -62,13 +62,8 @@ export async function POST(req: Request) {
       routes: labeled.map(({ route, label }) => ({
         id: route.id,
         label,
-<<<<<<< HEAD
         distanceMeters: route.distanceMeters,
         durationSeconds: route.durationSeconds,
-=======
-        distance_meters: route.distanceMeters,
-        duration_seconds: route.durationSeconds,
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
         summary: route.summary,
         geometry: route.geometry,
         latLngs: route.latLngs,
@@ -78,21 +73,19 @@ export async function POST(req: Request) {
       // Live traffic is not wired in yet — state it rather than implying it.
       traffic: {
         source: "none",
-        note: result.durationEstimated
+        note: result.degraded
+          ? result.degraded
+          : result.durationEstimated
           ? `Road distance is real; ${mode} time is estimated from distance (engine has no ${mode} profile). Live traffic not integrated.`
           : "Durations are engine free-flow estimates; live traffic not yet integrated.",
       },
       duration_estimated: result.durationEstimated === true,
+      degraded: result.degraded ?? null,
       serverTime: Date.now(),
     })
   } catch (err) {
-<<<<<<< HEAD
     const status = err instanceof RoutingError ? err.status : 502
     const message = err instanceof Error ? err.message : "Routing failed"
     return NextResponse.json({ error: message }, { status })
-=======
-    const e = err as RoutingError
-    return NextResponse.json({ error: e.message || "routing failed" }, { status: e.status ?? 502 })
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
   }
 }

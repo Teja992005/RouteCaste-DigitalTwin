@@ -30,7 +30,16 @@ export function ImpactDashboard({ result }: ImpactDashboardProps) {
   const affectedCount = result.routes.filter((route) => route.affected).length
   const maxDelta = result.routes.length > 0 ? Math.max(...result.routes.map((route) => route.etaDeltaMin)) : 0
   const recommended = result.routes.find((route) => route.recommended)
-  const severity = result.hotspot?.severityLabel ?? "Low"
+  // Peak congestion: the worse of the parametric forecast curve and the model's
+  // worst route while the event is running, so the tile cannot read "Low" next
+  // to a large model-predicted delay.
+  const levels = ["Low", "Moderate", "High", "Severe"]
+  const forecastLevel = result.hotspot?.severityLabel ?? "Low"
+  const eventRunning = (result.evaluation?.eventIntensity ?? 1) >= 0.05
+  const worstRoute = result.routes.length > 0 ? Math.max(...result.routes.map((route) => route.congestionDuring)) : 0
+  const routeLevel = worstRoute < 0.35 ? "Low" : worstRoute < 0.6 ? "Moderate" : worstRoute < 0.8 ? "High" : "Severe"
+  const severity =
+    eventRunning && levels.indexOf(routeLevel) > levels.indexOf(forecastLevel) ? routeLevel : forecastLevel
 
   function exportJson(simulation: EventSimulationResponse) {
     const blob = new Blob([JSON.stringify(simulation, null, 2)], { type: "application/json" })
@@ -48,7 +57,7 @@ export function ImpactDashboard({ result }: ImpactDashboardProps) {
         <h2 className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-primary">
           <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Impact Dashboard
         </h2>
-        <span className="max-w-[45%] truncate font-mono text-[9px] text-muted-foreground">{result.event.name}</span>
+        <span className="max-w-[45%] truncate font-mono text-[9px] text-muted-foreground">{(result.events ?? [result.event]).map((e) => e.name).join(" + ")}</span>
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-1.5">
@@ -70,7 +79,7 @@ export function ImpactDashboard({ result }: ImpactDashboardProps) {
                 {recommended.baseEtaMin.toFixed(1)}
                 <span className="ml-1 text-xs font-normal text-muted-foreground">min</span>
               </p>
-              <p className="mt-0.5 font-mono text-[9px] text-muted-foreground">free-flow baseline</p>
+              <p className="mt-0.5 font-mono text-[9px] text-muted-foreground">typical traffic at this hour</p>
             </div>
             <div className="rounded-lg border border-amber-400/30 bg-amber-400/5 p-3 text-center">
               <p className="font-mono text-[9px] uppercase tracking-widest text-amber-400/70">Event ETA</p>
@@ -190,13 +199,54 @@ export function ImpactDashboard({ result }: ImpactDashboardProps) {
         </table>}
       </div>
 
+      {(() => {
+        const explained = result.routes.filter((r) => r.explanation && r.explanation.totalDelayMin > 0.05)
+        if (explained.length === 0) return null
+        return (
+          <div className="mt-3 border-t border-border/60 pt-2">
+            <h3 className="font-mono text-[10px] uppercase tracking-widest text-primary">Why is the delay there?</h3>
+            <p className="mt-1 text-[9px] text-muted-foreground">Shapley attribution on the ETA model: each input's share of the extra minutes (shares sum to the delay).</p>
+            {explained.map((route) => {
+              const ex = route.explanation!
+              const shown = ex.drivers.filter((d) => d.minutes > 0.05)
+              return (
+                <div key={route.routeId} className="mt-2">
+                  <p className="text-[10px] text-foreground">
+                    {route.label} <span className="text-muted-foreground">· free-flow {ex.freeFlowMin} min, normal traffic {ex.normalTrafficMin} min, event +{ex.totalDelayMin} min</span>
+                  </p>
+                  {shown.length === 0 ? (
+                    <p className="text-[9px] text-muted-foreground">No single input stands out.</p>
+                  ) : (
+                    shown.map((d) => (
+                      <div key={d.id} className="mt-1 flex items-center gap-2 text-[9px] text-muted-foreground">
+                        <span className="w-40 shrink-0 truncate">{d.label}</span>
+                        <span className="h-1.5 flex-1 rounded-full bg-border/60">
+                          <span className="block h-1.5 rounded-full bg-primary" style={{ width: `${Math.max(2, Math.min(100, d.share * 100))}%` }} />
+                        </span>
+                        <span className="w-16 text-right font-mono text-foreground">+{d.minutes.toFixed(1)} min</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
+
       <p className="mt-3 text-[10px] text-muted-foreground">
         Peak congestion expected at {formatTime(result.peakAt)} · Event: {formatTime(result.event.startTime)} – {formatTime(result.event.endTime)}
       </p>
 
       <div className="mt-3 border-t border-border/60 pt-2">
         <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[9px] text-muted-foreground">
-          <span>Simulated at {formatTime(result.simulatedAt)}</span>
+          <span>
+            {result.evaluation?.basis === "time-slider"
+              ? `Evaluated at ${String(Math.floor(result.evaluation.hour)).padStart(2, "0")}:${String(Math.round((result.evaluation.hour % 1) * 60) % 60).padStart(2, "0")} · ${
+                  result.evaluation.eventIntensity < 0.05 ? "event not running" : `event ${Math.round(result.evaluation.eventIntensity * 100)}% of peak`
+                }`
+              : `Simulated at ${formatTime(result.simulatedAt)} · event peak`}
+          </span>
           <span className={`rounded-full border px-1.5 py-0.5 ${result.source === "model" ? "border-amber-400/50 text-amber-300" : "border-border text-muted-foreground"}`}>
             {result.source === "model" ? "ONNX Model" : "Heuristic"}
           </span>

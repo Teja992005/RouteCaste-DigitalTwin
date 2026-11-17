@@ -112,7 +112,9 @@ export type CongestionModelInput = {
 
   /**
    * Training value: capacity / (7200 × lanes), computed from road capacity
-   * and lane source attributes. Do not use a constant when either is missing.
+   * and lane source attributes. Prefer the real value. Route-level callers that
+   * have no road attributes (e.g. an OSRM route) may use the training-set mean
+   * via lib/event-model-inputs.ts and must report the input as approximated.
    */
   roadCapacityProxy: number
 

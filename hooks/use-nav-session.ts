@@ -80,13 +80,8 @@ export function useNavSession({
       line: route.latLngs as LL[],
       cum,
       steps: route.steps,
-<<<<<<< HEAD
       totalMeters: route.distanceMeters,
       totalSeconds: route.durationSeconds,
-=======
-      totalMeters: route.distance_meters,
-      totalSeconds: route.duration_seconds,
->>>>>>> 3e0d87cf2d454d04991b28c4d01c5022b1cbc975
       // Loosen the threshold when the fix itself is imprecise.
       offRouteMeters: Math.max(55, Math.min(140, (fix.accuracy || 0) * 1.5)),
     })
